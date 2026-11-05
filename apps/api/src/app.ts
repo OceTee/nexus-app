@@ -17,6 +17,11 @@ import { AppError } from './lib/errors';
 import { accountRouter } from './modules/account/account.router';
 import { authRouter } from './modules/auth/auth.router';
 import { devicesRouter } from './modules/devices/devices.router';
+import { collectionsRouter } from './modules/collections/collections.router';
+import { graphAndSearchRouter } from './modules/graph/graph.router';
+import { notesRouter } from './modules/notes/notes.router';
+import { syncRouter } from './modules/sync/sync.router';
+import { tagsRouter } from './modules/tags/tags.router';
 
 export interface AppDeps {
   env: Env;
@@ -75,6 +80,8 @@ export function createApp({ env, logger, db, container }: AppDeps): Express {
   );
   app.use(security(env.CORS_ORIGINS));
   app.use('/v1', noStore, jsonOnly);
+  // 2 MB for sync batches and note bodies; 64 KB everywhere else (TDD Section H).
+  app.use(['/v1/sync', '/v1/notes'], express.json({ limit: '2mb' }));
   app.use(express.json({ limit: '64kb' }));
 
   const database = db ?? container?.db;
@@ -96,6 +103,11 @@ export function createApp({ env, logger, db, container }: AppDeps): Express {
     protectedRoutes.use(authed, general);
     protectedRoutes.use('/me', accountRouter(container.account));
     protectedRoutes.use('/devices', devicesRouter(container.devices));
+    protectedRoutes.use('/sync', syncRouter(container.sync, limiters));
+    protectedRoutes.use('/notes', notesRouter(container.notes));
+    protectedRoutes.use('/collections', collectionsRouter(container.collections));
+    protectedRoutes.use('/tags', tagsRouter(container.tags));
+    protectedRoutes.use(graphAndSearchRouter(container.graph, container.search));
     app.use('/v1', protectedRoutes);
   }
 

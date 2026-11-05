@@ -17,12 +17,17 @@ export interface JobDeps {
   limiters: Limiters;
 }
 
-const PUSH_COPY = {
-  'security.new-device': (vars: Record<string, string>) => ({
+/** Alert copy per event; `sync.nudge` is data-only (no title or body). */
+const PUSH_COPY: Record<
+  string,
+  (vars: Record<string, string>) => { title?: string; body?: string }
+> = {
+  'security.new-device': (vars) => ({
     title: 'New device signed in',
     body: `${vars.deviceName ?? 'A device'} signed in to your NEXUS account.`,
   }),
-} as const;
+  'sync.nudge': () => ({}),
+};
 
 /** Handlers for the on-demand queues (`email.send`, `push.send`). */
 export function createJobHandlers({ db, logger, email, push, limiters }: JobDeps): JobHandlers {
@@ -57,7 +62,7 @@ export function createJobHandlers({ db, logger, email, push, limiters }: JobDeps
       const tokens = targets.map((t) => t.token!).filter(Boolean);
       if (tokens.length === 0) return;
       const invalid = await push.send(tokens, {
-        ...PUSH_COPY[job.event](job.vars),
+        ...PUSH_COPY[job.event]!(job.vars),
         data: { type: job.event },
       });
       if (invalid.length > 0) {

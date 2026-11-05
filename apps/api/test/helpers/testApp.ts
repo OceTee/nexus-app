@@ -45,12 +45,13 @@ let counter = 0;
  * An app wired to the real database (RLS via nexus_api), with in-memory queue,
  * email and push, and a fresh rate-limit namespace in the Postgres store.
  */
-export async function makeApp(pools: Pools): Promise<TestApp> {
+export async function makeApp(pools: Pools, opts: { lagMs?: number } = {}): Promise<TestApp> {
   const env = loadEnv({
     NODE_ENV: 'test',
     LOG_LEVEL: 'silent',
     JWT_SECRET: 'test-secret-that-is-at-least-32-characters-long',
     APP_URL: 'https://app.nexus.example',
+    SYNC_VISIBILITY_LAG_MS: String(opts.lagMs ?? 0),
   });
   const logger = createLogger(env);
   const queue = new MemoryQueue();

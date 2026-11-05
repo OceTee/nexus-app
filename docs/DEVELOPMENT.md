@@ -98,3 +98,11 @@ Database tests run against a throwaway PostgreSQL 18 container (Docker must be r
 ```bash
 pnpm --filter @nexus/api test:db
 ```
+
+## Load smoke test (k6)
+
+`scripts/k6/sync-smoke.js` runs 10 virtual devices against `POST /v1/sync` for 30 seconds and fails if the sync p95 exceeds 800 ms. It signs in as the seeded demo user, so seed first and start the API with `RATE_LIMIT_STORE=memory` (ten sign-ins from one IP would otherwise hit the auth limit).
+
+```bash
+docker run --rm -v "$PWD/scripts/k6:/scripts" grafana/k6:latest run -e API_URL=http://host.docker.internal:4000 -e PASSWORD=$DEMO_PASSWORD /scripts/sync-smoke.js
+```

@@ -18,7 +18,7 @@ export type EmailTemplateName =
 
 export interface PushJob {
   userId: string;
-  event: 'security.new-device';
+  event: 'security.new-device' | 'sync.nudge';
   /** Device that triggered the event; it is not notified. */
   excludeDeviceId?: string;
   vars: Record<string, string>;

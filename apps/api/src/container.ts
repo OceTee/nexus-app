@@ -17,6 +17,15 @@ import { AuditService } from './modules/audit/audit.service';
 import { AuthRepo } from './modules/auth/auth.repo';
 import { AuthService } from './modules/auth/auth.service';
 import { DevicesService } from './modules/devices/devices.service';
+import { CollectionsService } from './modules/collections/collections.service';
+import { ContentEngine } from './modules/content/applyOps';
+import { GraphService } from './modules/graph/graph.service';
+import { LinksService } from './modules/links/links.service';
+import { NotesService } from './modules/notes/notes.service';
+import { SearchService } from './modules/search/search.service';
+import { ChangeFeed } from './modules/sync/changeFeed';
+import { SyncService } from './modules/sync/sync.service';
+import { TagsService } from './modules/tags/tags.service';
 
 export interface ContainerDeps {
   env: Env;
@@ -38,6 +47,12 @@ export interface Container {
   auth: AuthService;
   account: AccountService;
   devices: DevicesService;
+  sync: SyncService;
+  notes: NotesService;
+  collections: CollectionsService;
+  tags: TagsService;
+  graph: GraphService;
+  search: SearchService;
 }
 
 export function createContainer(deps: ContainerDeps): Container {
@@ -65,6 +80,24 @@ export function createContainer(deps: ContainerDeps): Container {
 
   const audit = new AuditService();
   const authRepo = new AuthRepo();
+  const feed = new ChangeFeed(env.SYNC_VISIBILITY_LAG_MS);
+  const links = new LinksService();
+  const engine = new ContentEngine(feed, links);
+
+  /** After a batch changes server state, nudge the user's other devices (at most once per 30 s). */
+  const nudge = async (userId: string, deviceId: string) => {
+    try {
+      await limiters.syncNudge.consume(`user:${userId}`);
+    } catch {
+      return; // debounced
+    }
+    await queue.send('push.send', {
+      userId,
+      event: 'sync.nudge',
+      excludeDeviceId: deviceId,
+      vars: {},
+    });
+  };
 
   return {
     db,
@@ -83,5 +116,11 @@ export function createContainer(deps: ContainerDeps): Container {
     }),
     account: new AccountService(db, audit, queue),
     devices: new DevicesService(db, authRepo, audit),
+    sync: new SyncService(db, engine, feed, queue, nudge),
+    notes: new NotesService(db, engine, links),
+    collections: new CollectionsService(db, engine),
+    tags: new TagsService(db, engine),
+    graph: new GraphService(db),
+    search: new SearchService(db),
   };
 }

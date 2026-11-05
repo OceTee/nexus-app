@@ -42,6 +42,8 @@ const EnvSchema = z
     /** Expo access token for push with enhanced security. */
     EXPO_ACCESS_TOKEN: z.string().min(1).optional(),
 
+    /** Change-feed hold-back for late commits (risk R-02). */
+    SYNC_VISIBILITY_LAG_MS: z.coerce.number().int().min(0).max(60_000).default(2000),
     /** `postgres` in deployed environments; `memory` for local experiments and tests. */
     RATE_LIMIT_STORE: z.enum(['postgres', 'memory']).default('postgres'),
   })

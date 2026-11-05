@@ -14,5 +14,7 @@ export const RATE_LIMITS = {
   refresh: { points: 30, duration: 60 * 60 },
   resendVerification: { points: 1, duration: 5 * 60 },
   general: { points: 600, duration: 15 * 60 },
+  sync: { points: 120, duration: 60 * 60 },
+  syncNudge: { points: 1, duration: 30 },
   emailsPerUserPerDay: { points: 20, duration: 24 * 60 * 60 },
 } as const;
