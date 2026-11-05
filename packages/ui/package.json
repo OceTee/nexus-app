@@ -1,0 +1,19 @@
+{
+  "name": "@nexus/ui",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "NEXUS design tokens and UI primitives.",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json",
+    "lint": "eslint .",
+    "test": "vitest run --coverage"
+  },
+  "devDependencies": {
+    "@vitest/coverage-v8": "^5.1.0",
+    "vitest": "^5.1.0"
+  }
+}

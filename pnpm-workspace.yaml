@@ -1,3 +1,6 @@
 packages:
-  - "apps/*"
-  - "packages/*"
+  - 'apps/*'
+  - 'packages/*'
+
+# Hoisted layout: the default isolated layout breaks CMake/Ninja builds of React Native on Windows.
+nodeLinker: hoisted

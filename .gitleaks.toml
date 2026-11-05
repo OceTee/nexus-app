@@ -1,0 +1,11 @@
+# gitleaks configuration: default rules plus allow-listed local development values.
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Local development placeholders"
+paths = [
+  '''(^|/)\.env\.example$''',
+  '''(^|/)docker-compose\.yml$''',
+  '''(^|/)pnpm-lock\.yaml$''',
+]

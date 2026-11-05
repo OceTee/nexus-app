@@ -1,0 +1,46 @@
+# Local services for NEXUS development.
+#   Postgres 18 stands in for Neon; MinIO stands in for Cloudflare R2.
+#   Start: docker compose up -d    Stop: docker compose down
+services:
+  postgres:
+    image: postgres:18
+    environment:
+      POSTGRES_USER: nexus
+      POSTGRES_PASSWORD: nexus
+      POSTGRES_DB: nexus
+    ports:
+      - '5432:5432'
+    volumes:
+      - pgdata:/var/lib/postgresql
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U nexus -d nexus']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  minio:
+    image: minio/minio:latest
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: nexus
+      MINIO_ROOT_PASSWORD: nexus-dev-secret
+    ports:
+      - '9000:9000' # S3 API
+      - '9001:9001' # web console
+    volumes:
+      - miniodata:/data
+
+  # Creates the attachments bucket once MinIO is up.
+  minio-init:
+    image: minio/mc:latest
+    depends_on:
+      - minio
+    entrypoint: >
+      /bin/sh -c "
+      until mc alias set local http://minio:9000 nexus nexus-dev-secret; do sleep 1; done;
+      mc mb --ignore-existing local/nexus-attachments-dev;
+      "
+
+volumes:
+  pgdata:
+  miniodata:

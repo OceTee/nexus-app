@@ -1,0 +1,4 @@
+# Check formatting of staged files only.
+git diff --cached --name-only --diff-filter=ACMR -z \
+  | xargs -0 -r pnpm exec prettier --check --ignore-unknown --no-error-on-unmatched-pattern \
+  || { echo "Formatting issues found. Run: pnpm format"; exit 1; }
