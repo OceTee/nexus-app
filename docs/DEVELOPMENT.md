@@ -69,3 +69,32 @@ Commits follow [Conventional Commits](https://www.conventionalcommits.org/) and 
 ```bash
 pnpm --filter @nexus/shared exec vitest run -u
 ```
+
+## Database
+
+Local development uses PostgreSQL 18 from Docker Compose. Migrations and the seed run as the owner (`DATABASE_URL_DIRECT`); the API connects as `nexus_api`, which row-level security applies to (`DATABASE_URL`).
+
+```bash
+docker compose up -d postgres
+```
+
+```bash
+pnpm --filter @nexus/api db:migrate      # applies migrations; enables nexus_api login locally
+```
+
+```bash
+pnpm --filter @nexus/api db:seed         # demo@nexus.example with the demo corpus
+```
+
+Changing the schema:
+
+1. Edit the Drizzle schema in `apps/api/src/db/schema/`.
+2. Run `pnpm --filter @nexus/api db:generate` to create the next migration in `apps/api/drizzle/migrations/`.
+3. Add any hand-written SQL (triggers, grants, functions) to that file, with a `down` comment block.
+4. Commit the schema change and the migration together. CI fails if the schema has changes with no migration.
+
+Database tests run against a throwaway PostgreSQL 18 container (Docker must be running):
+
+```bash
+pnpm --filter @nexus/api test:db
+```

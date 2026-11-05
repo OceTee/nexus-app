@@ -1,5 +1,5 @@
-# CI stages 1 (static) and 2 (unit) from TDD Section I, CI pipeline stages.
-# Stages 3-8 (integration, preview DB, build, E2E, deploy, release) arrive in later phases.
+# CI stages 1 (static), 2 (unit) and 3 (database) from TDD Section I, CI pipeline stages.
+# Stages 4-8 (preview DB, build, E2E, deploy, release) arrive in later phases.
 name: CI
 
 on:
@@ -79,3 +79,32 @@ jobs:
             packages/*/coverage
           if-no-files-found: ignore
           retention-days: 14
+
+  database:
+    name: Stage 3 - Database
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Check migrations match the schema
+        working-directory: apps/api
+        run: |
+          pnpm exec drizzle-kit check
+          pnpm exec drizzle-kit generate --name ci_drift_check | tee drift.log
+          if ! grep -q "No schema changes" drift.log; then
+            echo "src/db/schema has changes without a committed migration. Run pnpm db:generate."
+            exit 1
+          fi
+
+      - name: Database tests (PostgreSQL 18 via Testcontainers)
+        run: pnpm --filter @nexus/api test:db
