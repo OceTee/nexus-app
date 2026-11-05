@@ -60,3 +60,38 @@ export class RateLimitedError extends AppError {
     super(429, 'RATE_LIMITED', 'Too many requests');
   }
 }
+
+/** 401 with the same message for unknown email and wrong password (no enumeration). */
+export class InvalidCredentialsError extends AppError {
+  constructor() {
+    super(401, 'INVALID_CREDENTIALS', 'Email or password is incorrect');
+  }
+}
+
+/** 423 after too many failed logins for one account. */
+export class LockedError extends AppError {
+  constructor(public readonly retryAfter: number) {
+    super(423, 'LOCKED', 'Too many failed attempts; try again later');
+  }
+}
+
+/** 400 for an unknown or already-used emailed token. */
+export class TokenInvalidError extends AppError {
+  constructor() {
+    super(400, 'TOKEN_INVALID', 'This link is not valid');
+  }
+}
+
+/** 410 for an emailed token past its expiry. */
+export class TokenGoneError extends AppError {
+  constructor() {
+    super(410, 'TOKEN_EXPIRED', 'This link has expired');
+  }
+}
+
+/** 409 for a stale `baseRev`, with the server revision and the stored conflict version. */
+export class ConflictError extends AppError {
+  constructor(details: { serverRev: number; conflictVersionId: string }) {
+    super(409, 'CONFLICT', 'The item changed on another device', details);
+  }
+}

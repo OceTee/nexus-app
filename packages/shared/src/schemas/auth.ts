@@ -99,7 +99,7 @@ export type ChangePasswordInput = z.infer<typeof ChangePasswordInput>;
 /** Claims carried in the access token (JWT, 15 minutes). */
 export const AccessTokenClaims = z.object({
   sub: Uuid,
-  did: UuidV7,
+  dev: UuidV7,
   ver: z.boolean(),
   iat: z.number().int(),
   exp: z.number().int(),

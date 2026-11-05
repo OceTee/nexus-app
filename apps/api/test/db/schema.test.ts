@@ -90,7 +90,12 @@ describe('T-34 migrations', () => {
       .map((t) => t.relname)
       .sort();
     // Token tables are looked up before a user context exists; sync_state_server is global.
-    expect(withoutRls).toEqual(['email_tokens', 'refresh_tokens', 'sync_state_server']);
+    expect(withoutRls).toEqual([
+      'email_tokens',
+      'rate_limits',
+      'refresh_tokens',
+      'sync_state_server',
+    ]);
   });
 
   it('give nexus_api no BYPASSRLS and no table ownership', async () => {

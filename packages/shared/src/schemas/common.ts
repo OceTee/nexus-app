@@ -85,6 +85,7 @@ export const ErrorCode = z.enum([
   'UPLOAD_INCOMPLETE',
   'EXPIRED',
   'PAYLOAD_TOO_LARGE',
+  'UNSUPPORTED_MEDIA_TYPE',
   'BUSINESS_RULE',
   'DEPTH_EXCEEDED',
   'CYCLE',
