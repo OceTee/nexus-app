@@ -6,3 +6,4 @@ coverage
 pnpm-lock.yaml
 apps/mobile/android
 apps/mobile/ios
+**/__snapshots__

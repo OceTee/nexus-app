@@ -61,3 +61,11 @@ npx expo run:android             # builds the native app, installs it and starts
 | `pnpm format:check` | Prettier check (used in CI)                     |
 
 Commits follow [Conventional Commits](https://www.conventionalcommits.org/) and are checked by commitlint.
+
+## API contract snapshot
+
+`packages/shared/test/__snapshots__/schemas.contract.json` holds the JSON Schema of every exported Zod schema. If a schema change makes the snapshot test fail, check that the change is intended (it alters what the API accepts or returns), then accept it and commit the updated snapshot with the change:
+
+```bash
+pnpm --filter @nexus/shared exec vitest run -u
+```

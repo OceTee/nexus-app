@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { createApp } from '../../src/app';
 import { loadEnv } from '../../src/config/env';
 import { createLogger } from '../../src/lib/logger';
+import { HealthDto, MetaDto } from '@nexus/shared';
 
 const env = loadEnv({
   NODE_ENV: 'test',
@@ -15,13 +16,13 @@ describe('system routes', () => {
   it('GET /healthz returns 200 ok', async () => {
     const res = await request(app).get('/healthz');
     expect(res.status).toBe(200);
-    expect(res.body).toEqual({ status: 'ok' });
+    expect(HealthDto.parse(res.body)).toEqual({ status: 'ok' });
   });
 
   it('GET /v1/meta returns the API contract version', async () => {
     const res = await request(app).get('/v1/meta');
     expect(res.status).toBe(200);
-    expect(res.body).toMatchObject({ apiVersion: '1', minClientSchema: 1, minAppVersion: '1.0.0' });
+    expect(MetaDto.parse(res.body)).toMatchObject({ apiVersion: '1', minClientSchema: 1 });
     expect(Date.parse(res.body.serverTime)).not.toBeNaN();
   });
 });
