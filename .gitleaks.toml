@@ -8,4 +8,8 @@ paths = [
   '''(^|/)\.env\.example$''',
   '''(^|/)docker-compose\.yml$''',
   '''(^|/)pnpm-lock\.yaml$''',
+  # Test fixtures use fake signing secrets; real secrets live only in the platform secret store.
+  '''(^|/)apps/api/test/''',
+  # Build output and dependencies are never committed (only matters for local folder scans).
+  '''(^|/)(dist|node_modules|coverage)/''',
 ]
