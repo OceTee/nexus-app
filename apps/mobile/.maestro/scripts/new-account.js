@@ -30,6 +30,19 @@ function call(method, path, body, token) {
   return res.body ? JSON.parse(res.body) : null;
 }
 
+/** Waits for the verification email (sent by a background job) for up to 20 s. */
+function lastEmail(to) {
+  for (let attempt = 0; attempt < 40; attempt += 1) {
+    const res = http.get(`${API}/v1/dev/emails/last?to=${encodeURIComponent(to)}`);
+    if (res.status === 200) return JSON.parse(res.body);
+    const until = Date.now() + 500;
+    while (Date.now() < until) {
+      // wait (Maestro scripts have no sleep)
+    }
+  }
+  throw new Error(`No email for ${to} after 20 s`);
+}
+
 const email = `e2e-${Date.now()}@example.com`;
 const password = 'Maestro-Flow-Passphrase-42';
 call('POST', '/v1/auth/register', {
@@ -38,7 +51,7 @@ call('POST', '/v1/auth/register', {
   displayName: 'E2E Tester',
   device: { id: uuidv7(), name: 'E2E setup', platform: 'android', appVersion: '1.0.0' },
 });
-const mail = call('GET', `/v1/dev/emails/last?to=${encodeURIComponent(email)}`);
+const mail = lastEmail(email);
 const token = /[?&]token=([^&\s]+)/.exec(mail.link)[1];
 call('POST', '/v1/auth/verify-email', { token: decodeURIComponent(token) });
 

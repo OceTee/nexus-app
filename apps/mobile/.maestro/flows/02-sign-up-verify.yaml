@@ -6,6 +6,10 @@ tags: [api, smoke]
 ---
 # The runner (run.mjs) clears app data before each flow.
 - launchApp
+# Slow CI emulators sometimes show "… isn't responding"; keep waiting.
+- tapOn:
+    text: 'Wait'
+    optional: true
 - extendedWaitUntil:
     visible: 'Create account'
     timeout: 60000

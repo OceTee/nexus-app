@@ -3,6 +3,10 @@ appId: com.gladprosper.nexus.development
 ---
 # The runner (run.mjs) clears app data before each flow.
 - launchApp
+# Slow CI emulators sometimes show "… isn't responding"; keep waiting.
+- tapOn:
+    text: 'Wait'
+    optional: true
 - extendedWaitUntil:
     visible: 'Continue offline'
     timeout: 60000

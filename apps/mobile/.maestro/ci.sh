@@ -5,6 +5,8 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 adb wait-for-device
+# Slow emulators raise "… isn't responding" dialogs for system apps; hide them.
+adb shell settings put global hide_error_dialogs 1
 adb install -r android/app/build/outputs/apk/debug/app-debug.apk
 for port in 4000 8081 9000; do adb reverse "tcp:$port" "tcp:$port"; done
 

@@ -3,7 +3,7 @@ import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { LogBox, StyleSheet, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -12,6 +12,9 @@ import { restoreSession } from '../src/features/auth/authService';
 import { openDatabase } from '../src/infra/db';
 import { useSessionStore } from '../src/stores/session';
 import { Button, Text, ThemeProvider, ToastHost, useTheme } from '../src/ui';
+
+// E2E runs (Maestro) hide development warning toasts that cover the screen.
+if (process.env.EXPO_PUBLIC_E2E === '1') LogBox.ignoreAllLogs(true);
 
 void SplashScreen.preventAutoHideAsync();
 SplashScreen.setOptions({ fade: true, duration: 200 });

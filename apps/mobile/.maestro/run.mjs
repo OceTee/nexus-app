@@ -74,13 +74,40 @@ for (const file of flows) {
       join(here, 'flows', file),
     ],
     {
-      stdio: 'inherit',
+      stdio: ['ignore', 'pipe', 'pipe'],
+      encoding: 'utf8',
+      maxBuffer: 64 * 1024 * 1024,
       shell: process.platform === 'win32',
     },
   );
-  results.push({ file, status: run.status === 0 ? 'passed' : 'FAILED' });
+  const out = `${run.stdout ?? ''}${run.stderr ?? ''}`;
+  process.stdout.write(out);
+  const passed = run.status === 0;
+  // The failing step and Maestro's reason, for the summary and CI annotations.
+  const reason = passed
+    ? ''
+    : out
+        .split(/\r?\n/)
+        .map((l) => l.trim())
+        .filter((l) => /FAILED|not visible|Assertion|Exception|Error|timed out/i.test(l))
+        .slice(-4)
+        .join(' | ');
+  results.push({ file, status: passed ? 'passed' : 'FAILED', reason });
 }
 
 console.log('\nResults');
-for (const r of results) console.log(`  ${r.status.padEnd(26)} ${r.file}`);
+for (const r of results) {
+  console.log(`  ${r.status.padEnd(26)} ${r.file}${r.reason ? `  — ${r.reason}` : ''}`);
+}
+// On GitHub Actions each failure becomes an annotation, readable without the raw logs.
+if (process.env.GITHUB_ACTIONS) {
+  const esc = (t) => t.replace(/%/g, '%25').replace(/\r/g, '%0D').replace(/\n/g, '%0A');
+  for (const r of results.filter((x) => x.status === 'FAILED')) {
+    console.log(`::error title=E2E ${r.file}::${esc(r.reason || 'failed (see e2e-results)')}`);
+  }
+  const passedCount = results.filter((x) => x.status === 'passed').length;
+  console.log(
+    `::notice title=E2E summary::${passedCount} passed, ${results.length - passedCount} not passed`,
+  );
+}
 process.exit(results.some((r) => r.status === 'FAILED') ? 1 : 0);

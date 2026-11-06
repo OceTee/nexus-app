@@ -5,6 +5,10 @@ appId: com.gladprosper.nexus.development
 - runScript: ../scripts/new-account.js
 # The runner (run.mjs) clears app data before each flow.
 - launchApp
+# Slow CI emulators sometimes show "… isn't responding"; keep waiting.
+- tapOn:
+    text: 'Wait'
+    optional: true
 - extendedWaitUntil:
     visible: 'Sign in'
     timeout: 60000
