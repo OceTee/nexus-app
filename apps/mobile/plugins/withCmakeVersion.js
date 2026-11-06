@@ -4,6 +4,8 @@
 // CMake 4.1.2 bundles Ninja 1.12.1, which supports long paths. CMake 4 dropped
 // compatibility with projects declaring cmake_minimum_required below 3.5 (for
 // example expo-sqlite), so every module also gets CMAKE_POLICY_VERSION_MINIMUM.
+// The pin applies only when building on Windows; Linux and macOS (CI) keep the
+// SDK's default CMake, which the build machine already has.
 const { withProjectBuildGradle } = require('expo/config-plugins');
 
 const MARKER = '// @generated nexus-cmake-version';
@@ -15,7 +17,7 @@ module.exports = function withCmakeVersion(config, { version = '4.1.2' } = {}) {
     if (src.includes(MARKER)) return cfg;
     // Must run before the React Native root plugin, which evaluates :app early.
     const block = `${MARKER}
-subprojects {
+if (System.getProperty('os.name').toLowerCase().contains('windows')) subprojects {
   ['com.android.application', 'com.android.library'].each { id ->
     pluginManager.withPlugin(id) {
       android.externalNativeBuild.cmake.version = '${version}'

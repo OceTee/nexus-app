@@ -4,6 +4,10 @@
 // with a second user profile, such as XOS dual apps).
 //
 //   node .maestro/run.mjs [--device <serial>] [--only 04,07] [--include manual]
+//                         [--keep-driver]
+//
+// --keep-driver skips Maestro's driver reinstall, for phones where the driver
+// was installed once and exempted from the system's app freezer.
 //
 // Flows tagged `manual` (needs a finger on the sensor) and `emulator-only`
 // (airplane mode cuts wireless adb) are skipped unless --include names them.
@@ -38,6 +42,7 @@ const only = arg('only')?.split(',');
 const include = new Set(arg('include')?.split(',') ?? []);
 const skipTags = ['manual', 'emulator-only'].filter((t) => !include.has(t));
 const maestro = process.env.MAESTRO_BIN ?? 'maestro';
+const keepDriver = args.includes('--keep-driver');
 const adb = (...a) => execFileSync('adb', ['-s', device, ...a], { encoding: 'utf8' });
 
 const flows = readdirSync(join(here, 'flows'))
@@ -59,10 +64,15 @@ for (const file of flows) {
   adb('shell', 'pm', 'clear', APP_ID);
   for (const port of ['4000', '8081', '9000']) adb('reverse', `tcp:${port}`, `tcp:${port}`);
   console.log(`\n▶ ${file}`);
-  // The driver stays installed (and exempt from the phone's app freezer) between runs.
   const run = spawnSync(
     maestro,
-    ['--device', device, 'test', '--no-reinstall-driver', join(here, 'flows', file)],
+    [
+      '--device',
+      device,
+      'test',
+      ...(keepDriver ? ['--no-reinstall-driver'] : []),
+      join(here, 'flows', file),
+    ],
     {
       stdio: 'inherit',
       shell: process.platform === 'win32',
