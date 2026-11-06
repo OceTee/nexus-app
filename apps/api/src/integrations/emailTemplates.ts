@@ -84,5 +84,21 @@ export function renderEmail(
           'You can cancel at any time before then from Settings → Account.',
         ]),
       };
+    case 'deletion-reminder':
+      return {
+        subject: 'Your NEXUS account will be deleted in 7 days',
+        ...layout('Account deletion reminder', [
+          `Your account and all its notes will be permanently deleted on ${v('purgeDate')}.`,
+          'Export anything you want to keep, or cancel the deletion from Settings → Account.',
+        ]),
+      };
+    case 'account-deleted':
+      return {
+        subject: 'Your NEXUS account has been deleted',
+        ...layout('Account deleted', [
+          'Your account, notes and attachments have been permanently deleted, as you requested.',
+          'Backups that contained them expire within 30 days.',
+        ]),
+      };
   }
 }

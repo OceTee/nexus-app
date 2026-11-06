@@ -26,6 +26,9 @@ import { SearchService } from './modules/search/search.service';
 import { ChangeFeed } from './modules/sync/changeFeed';
 import { SyncService } from './modules/sync/sync.service';
 import { TagsService } from './modules/tags/tags.service';
+import { AttachmentsService } from './modules/attachments/attachments.service';
+import { ExportsService } from './modules/exports/exports.service';
+import { S3Storage, UnconfiguredStorage, type Storage } from './integrations/r2';
 
 export interface ContainerDeps {
   env: Env;
@@ -36,6 +39,11 @@ export interface ContainerDeps {
   email?: EmailSender;
   push?: PushSender;
   limiterStore?: LimiterStore;
+  storage?: Storage;
+  /** Cross-user connection for maintenance jobs (nexus_maint or owner). */
+  maintDb?: Db;
+  /** pg_dump runner for backup.dump. */
+  dumpDatabase?: () => Promise<Uint8Array>;
 }
 
 export interface Container {
@@ -53,6 +61,9 @@ export interface Container {
   tags: TagsService;
   graph: GraphService;
   search: SearchService;
+  attachments: AttachmentsService;
+  exports: ExportsService;
+  storage: Storage;
 }
 
 export function createContainer(deps: ContainerDeps): Container {
@@ -78,6 +89,7 @@ export function createContainer(deps: ContainerDeps): Container {
       : new LogSender(logger));
   const push = deps.push ?? new ExpoPushSender(env.EXPO_ACCESS_TOKEN, logger);
 
+  const storage = deps.storage ?? storageFromEnv(env, logger);
   const audit = new AuditService();
   const authRepo = new AuthRepo();
   const feed = new ChangeFeed(env.SYNC_VISIBILITY_LAG_MS);
@@ -99,12 +111,12 @@ export function createContainer(deps: ContainerDeps): Container {
     });
   };
 
-  return {
+  const container: Container = {
     db,
     signer,
     limiters,
     queue,
-    jobHandlers: createJobHandlers({ db, logger, email, push, limiters }),
+    jobHandlers: undefined as unknown as JobHandlers,
     auth: new AuthService({
       db,
       repo: authRepo,
@@ -122,5 +134,44 @@ export function createContainer(deps: ContainerDeps): Container {
     tags: new TagsService(db, engine),
     graph: new GraphService(db),
     search: new SearchService(db),
+    attachments: new AttachmentsService(db, storage, engine, feed),
+    exports: new ExportsService(db, storage, queue, env.FEATURE_SERVER_EXPORTS),
+    storage,
   };
+  if (!deps.maintDb)
+    logger.warn('No maintenance connection; scheduled jobs run under RLS and will see no rows');
+  container.jobHandlers = createJobHandlers({
+    db,
+    logger,
+    email,
+    push,
+    limiters,
+    exports: container.exports,
+    maintenance: {
+      db: deps.maintDb ?? db,
+      storage,
+      queue,
+      logger,
+      ...(deps.dumpDatabase ? { dumpDatabase: deps.dumpDatabase } : {}),
+      ...(env.BACKUP_AGE_RECIPIENT ? { backupRecipient: env.BACKUP_AGE_RECIPIENT } : {}),
+    },
+  });
+  return container;
+}
+
+/** R2 (or MinIO) from the environment; attachment routes answer 503 when unset. */
+function storageFromEnv(env: Env, logger: Logger): Storage {
+  const endpoint =
+    env.R2_ENDPOINT ??
+    (env.R2_ACCOUNT_ID ? `https://${env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com` : undefined);
+  if (!endpoint || !env.R2_ACCESS_KEY_ID || !env.R2_SECRET_ACCESS_KEY) {
+    logger.warn('R2 is not configured; attachments are unavailable');
+    return new UnconfiguredStorage();
+  }
+  return new S3Storage({
+    endpoint,
+    bucket: env.R2_BUCKET,
+    accessKeyId: env.R2_ACCESS_KEY_ID,
+    secretAccessKey: env.R2_SECRET_ACCESS_KEY,
+  });
 }

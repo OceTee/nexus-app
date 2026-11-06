@@ -8,6 +8,19 @@ import type { EmailSender } from '../integrations/email';
 import { renderEmail } from '../integrations/emailTemplates';
 import type { PushSender } from '../integrations/push';
 import type { JobHandlers } from './queue';
+import type { ExportsService } from '../modules/exports/exports.service';
+import {
+  backupDatabase,
+  compactChanges,
+  expireExports,
+  purgeAccounts,
+  pruneAudit,
+  pruneTokens,
+  pruneVersions,
+  remindPendingDeletions,
+  sweepAttachments,
+  type MaintenanceDeps,
+} from './maintenance';
 
 export interface JobDeps {
   db: Db;
@@ -15,6 +28,9 @@ export interface JobDeps {
   email: EmailSender;
   push: PushSender;
   limiters: Limiters;
+  /** Cross-user connection and storage for scheduled maintenance. */
+  maintenance: MaintenanceDeps;
+  exports: ExportsService;
 }
 
 /** Alert copy per event; `sync.nudge` is data-only (no title or body). */
@@ -27,10 +43,23 @@ const PUSH_COPY: Record<
     body: `${vars.deviceName ?? 'A device'} signed in to your NEXUS account.`,
   }),
   'sync.nudge': () => ({}),
+  'account.deletion-reminder': (vars) => ({
+    title: 'Account deletion in 7 days',
+    body: `Your NEXUS account will be deleted on ${vars.purgeDate ?? 'the scheduled date'}.`,
+  }),
 };
 
-/** Handlers for the on-demand queues (`email.send`, `push.send`). */
-export function createJobHandlers({ db, logger, email, push, limiters }: JobDeps): JobHandlers {
+/** Handlers for every queue: on-demand (email, push, exports) and scheduled maintenance. */
+export function createJobHandlers({
+  db,
+  logger,
+  email,
+  push,
+  limiters,
+  maintenance,
+  exports,
+}: JobDeps): JobHandlers {
+  const log = (job: string) => (result: unknown) => logger.info({ job, result }, 'job finished');
   return {
     async 'email.send'(job) {
       if (job.userId) {
@@ -71,5 +100,20 @@ export function createJobHandlers({ db, logger, email, push, limiters }: JobDeps
         );
       }
     },
+
+    async 'exports.generate'({ userId, exportId }) {
+      await exports.generate(userId, exportId);
+    },
+    'versions.prune': async () => log('versions.prune')(await pruneVersions(maintenance.db)),
+    'changes.compact': async () => log('changes.compact')(await compactChanges(maintenance)),
+    'attachments.orphan-sweep': async () =>
+      log('attachments.orphan-sweep')(await sweepAttachments(maintenance)),
+    'accounts.purge': async () => log('accounts.purge')(await purgeAccounts(maintenance)),
+    'account.deletion-reminder': async () =>
+      log('account.deletion-reminder')(await remindPendingDeletions(maintenance)),
+    'tokens.prune': async () => log('tokens.prune')(await pruneTokens(maintenance)),
+    'audit.prune': async () => log('audit.prune')(await pruneAudit(maintenance)),
+    'exports.expire': async () => log('exports.expire')(await expireExports(maintenance)),
+    'backup.dump': async () => log('backup.dump')(await backupDatabase(maintenance)),
   };
 }

@@ -7,6 +7,7 @@ import { loadEnv } from '../../src/config/env';
 import { createContainer, type Container } from '../../src/container';
 import { createDb, type DbHandle } from '../../src/db/client';
 import { MemorySender } from '../../src/integrations/email';
+import { S3Storage } from '../../src/integrations/r2';
 import { MemoryPushSender } from '../../src/integrations/push';
 import { MemoryQueue } from '../../src/jobs/queue';
 import { createLogger } from '../../src/lib/logger';
@@ -45,13 +46,33 @@ let counter = 0;
  * An app wired to the real database (RLS via nexus_api), with in-memory queue,
  * email and push, and a fresh rate-limit namespace in the Postgres store.
  */
-export async function makeApp(pools: Pools, opts: { lagMs?: number } = {}): Promise<TestApp> {
+/** MinIO storage shared by tests. */
+export function testStorage(): S3Storage {
+  return new S3Storage({
+    endpoint: inject('s3Endpoint'),
+    bucket: inject('s3Bucket'),
+    accessKeyId: inject('s3AccessKey'),
+    secretAccessKey: inject('s3SecretKey'),
+  });
+}
+
+export async function makeApp(
+  pools: Pools,
+  opts: {
+    lagMs?: number;
+    serverExports?: boolean;
+    dumpDatabase?: () => Promise<Uint8Array>;
+    backupRecipient?: string;
+  } = {},
+): Promise<TestApp> {
   const env = loadEnv({
     NODE_ENV: 'test',
     LOG_LEVEL: 'silent',
     JWT_SECRET: 'test-secret-that-is-at-least-32-characters-long',
     APP_URL: 'https://app.nexus.example',
     SYNC_VISIBILITY_LAG_MS: String(opts.lagMs ?? 0),
+    FEATURE_SERVER_EXPORTS: opts.serverExports ? 'true' : 'false',
+    ...(opts.backupRecipient ? { BACKUP_AGE_RECIPIENT: opts.backupRecipient } : {}),
   });
   const logger = createLogger(env);
   const queue = new MemoryQueue();
@@ -66,6 +87,9 @@ export async function makeApp(pools: Pools, opts: { lagMs?: number } = {}): Prom
     email: mail,
     push,
     limiterStore: { kind: 'postgres', pool: pools.api.pool, prefix: `t${Date.now()}-${++counter}` },
+    storage: testStorage(),
+    maintDb: pools.owner.db,
+    ...(opts.dumpDatabase ? { dumpDatabase: opts.dumpDatabase } : {}),
   });
   await queue.work(container.jobHandlers);
   const app = createApp({ env, logger, container });

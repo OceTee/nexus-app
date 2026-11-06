@@ -22,6 +22,8 @@ import { graphAndSearchRouter } from './modules/graph/graph.router';
 import { notesRouter } from './modules/notes/notes.router';
 import { syncRouter } from './modules/sync/sync.router';
 import { tagsRouter } from './modules/tags/tags.router';
+import { attachmentsRouter } from './modules/attachments/attachments.router';
+import { exportsRouter } from './modules/exports/exports.router';
 
 export interface AppDeps {
   env: Env;
@@ -107,6 +109,8 @@ export function createApp({ env, logger, db, container }: AppDeps): Express {
     protectedRoutes.use('/notes', notesRouter(container.notes));
     protectedRoutes.use('/collections', collectionsRouter(container.collections));
     protectedRoutes.use('/tags', tagsRouter(container.tags));
+    protectedRoutes.use('/attachments', attachmentsRouter(container.attachments, limiters));
+    protectedRoutes.use('/exports', exportsRouter(container.exports, limiters));
     protectedRoutes.use(graphAndSearchRouter(container.graph, container.search));
     app.use('/v1', protectedRoutes);
   }

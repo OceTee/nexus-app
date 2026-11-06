@@ -106,3 +106,15 @@ pnpm --filter @nexus/api test:db
 ```bash
 docker run --rm -v "$PWD/scripts/k6:/scripts" grafana/k6:latest run -e API_URL=http://host.docker.internal:4000 -e PASSWORD=$DEMO_PASSWORD /scripts/sync-smoke.js
 ```
+
+## Attachments and background jobs
+
+`docker compose up -d` also starts MinIO (S3 API on `localhost:9000`, console on `localhost:9001`, login `nexus` / `nexus-dev-secret`) and creates the `nexus-attachments-dev` bucket. MinIO no longer publishes community images to Docker Hub, so the compose file and the tests use Chainguard's `chainguard/minio` build.
+
+To upload from a phone during development, forward the storage port as well as the API port, because presigned URLs point at `localhost:9000`:
+
+```bash
+adb reverse tcp:9000 tcp:9000
+```
+
+With `ROLE=all` (the default) the API process also runs the job workers and registers the cron schedules in pg-boss (all times UTC): `backup.dump` 01:00, `accounts.purge` 02:00, `versions.prune` 03:00, `attachments.orphan-sweep` 03:30, `changes.compact` Sundays 04:00, `tokens.prune` 05:00, `account.deletion-reminder` 09:00, `exports.expire` hourly at :15, `audit.prune` monthly. Scheduled jobs use `DATABASE_URL_MAINT`, a role that bypasses row-level security. The nightly backup needs `pg_dump` on the server and `BACKUP_AGE_RECIPIENT`; without them it logs a warning and skips.

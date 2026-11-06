@@ -42,6 +42,21 @@ const EnvSchema = z
     /** Expo access token for push with enhanced security. */
     EXPO_ACCESS_TOKEN: z.string().min(1).optional(),
 
+    /** Attachment storage: R2 in staging/production, MinIO locally (S3 API). */
+    R2_ENDPOINT: z.url().optional(),
+    R2_ACCOUNT_ID: z.string().min(1).optional(),
+    R2_ACCESS_KEY_ID: z.string().min(1).optional(),
+    R2_SECRET_ACCESS_KEY: z.string().min(1).optional(),
+    R2_BUCKET: z.string().min(3).default('nexus-attachments-dev'),
+    /** Cross-user maintenance jobs (nexus_maint, BYPASSRLS). */
+    DATABASE_URL_MAINT: PgUrl.optional(),
+    /** age recipient (public key) for encrypted nightly backups. */
+    BACKUP_AGE_RECIPIENT: z.string().startsWith('age1').optional(),
+    /** Server-side export generation (post-MVP; off by default). */
+    FEATURE_SERVER_EXPORTS: z
+      .enum(['true', 'false', '1', '0'])
+      .default('false')
+      .transform((v) => v === 'true' || v === '1'),
     /** Change-feed hold-back for late commits (risk R-02). */
     SYNC_VISIBILITY_LAG_MS: z.coerce.number().int().min(0).max(60_000).default(2000),
     /** `postgres` in deployed environments; `memory` for local experiments and tests. */

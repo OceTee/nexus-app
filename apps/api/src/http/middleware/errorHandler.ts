@@ -33,6 +33,16 @@ export const errorHandler: ErrorRequestHandler = (err, req, res, _next) => {
     });
     return;
   }
+  if (
+    typeof err === 'object' &&
+    err !== null &&
+    (err as { code?: string }).code === 'UNAVAILABLE'
+  ) {
+    res.status(503).json({
+      error: { code: 'UNAVAILABLE', message: (err as Error).message, requestId: req.id },
+    });
+    return;
+  }
   req.log.error({ err }, 'unhandled error');
   res.status(500).json({
     error: { code: 'INTERNAL', message: 'Something went wrong', requestId: req.id },

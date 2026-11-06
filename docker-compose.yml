@@ -18,8 +18,10 @@ services:
       timeout: 3s
       retries: 10
 
+  # MinIO no longer publishes community images to Docker Hub; Chainguard
+  # builds the same server. It runs as a non-root user (65532).
   minio:
-    image: minio/minio:latest
+    image: chainguard/minio:latest
     command: server /data --console-address ":9001"
     environment:
       MINIO_ROOT_USER: nexus
@@ -30,16 +32,15 @@ services:
     volumes:
       - miniodata:/data
 
-  # Creates the attachments bucket once MinIO is up.
+  # Creates the attachments bucket; restarts until MinIO accepts connections.
   minio-init:
-    image: minio/mc:latest
+    image: chainguard/minio-client:latest
     depends_on:
       - minio
-    entrypoint: >
-      /bin/sh -c "
-      until mc alias set local http://minio:9000 nexus nexus-dev-secret; do sleep 1; done;
-      mc mb --ignore-existing local/nexus-attachments-dev;
-      "
+    environment:
+      MC_HOST_local: http://nexus:nexus-dev-secret@minio:9000
+    command: ['mb', '--ignore-existing', 'local/nexus-attachments-dev']
+    restart: on-failure
 
 volumes:
   pgdata:

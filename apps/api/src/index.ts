@@ -3,13 +3,15 @@ import { createApp } from './app';
 import { loadEnv } from './config/env';
 import { createContainer, type Container } from './container';
 import { createDb, type DbHandle } from './db/client';
-import { PgBossQueue, type JobQueue } from './jobs/queue';
+import { pgDump } from './jobs/pgDump';
+import { PgBossQueue, SCHEDULES, type JobQueue } from './jobs/queue';
 import { createLogger } from './lib/logger';
 
 const env = loadEnv();
 const logger = createLogger(env);
 
 let database: DbHandle | undefined;
+let maintenance: DbHandle | undefined;
 let queue: JobQueue | undefined;
 let container: Container | undefined;
 
@@ -20,10 +22,22 @@ if (env.DATABASE_URL) {
     throw new Error('Set JOBS_DATABASE_URL (or DATABASE_URL_DIRECT) for the job queue.');
   }
   queue = new PgBossQueue(jobsUrl, logger);
-  container = createContainer({ env, logger, db: database.db, pool: database.pool, queue });
+  // Scheduled maintenance runs across users: nexus_maint (BYPASSRLS) in deployed environments.
+  const maintUrl = env.DATABASE_URL_MAINT ?? jobsUrl;
+  maintenance = createDb(maintUrl, { max: 2, applicationName: 'nexus-maint' });
+  container = createContainer({
+    env,
+    logger,
+    db: database.db,
+    pool: database.pool,
+    queue,
+    maintDb: maintenance.db,
+    dumpDatabase: pgDump(env.DATABASE_URL_DIRECT ?? maintUrl),
+  });
   if (env.ROLE !== 'api') {
     await queue.work(container.jobHandlers);
-    logger.info('job workers started');
+    await queue.schedule(SCHEDULES);
+    logger.info('job workers and schedules started');
   }
 } else {
   logger.warn('DATABASE_URL is not set; running without a database (/readyz reports not ready)');
@@ -48,6 +62,7 @@ async function shutdown(signal: string): Promise<void> {
   await new Promise<void>((resolve) => (server ? server.close(() => resolve()) : resolve()));
   await queue?.stop();
   await database?.close();
+  await maintenance?.close();
   process.exit(0);
 }
 

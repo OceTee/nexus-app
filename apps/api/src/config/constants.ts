@@ -16,5 +16,7 @@ export const RATE_LIMITS = {
   general: { points: 600, duration: 15 * 60 },
   sync: { points: 120, duration: 60 * 60 },
   syncNudge: { points: 1, duration: 30 },
+  attachments: { points: 60, duration: 60 * 60 },
+  exports: { points: 5, duration: 24 * 60 * 60 },
   emailsPerUserPerDay: { points: 20, duration: 24 * 60 * 60 },
 } as const;
