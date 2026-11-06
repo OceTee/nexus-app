@@ -1,6 +1,6 @@
 import { Image } from 'expo-image';
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
-import { AppState, StyleSheet, View } from 'react-native';
+import { AppState, BackHandler, StyleSheet, View } from 'react-native';
 import { unlock } from '../../infra/biometrics';
 import { useSettingsStore } from '../../stores/settings';
 import { Button, Text, useTheme } from '../../ui';
@@ -47,6 +47,15 @@ export function LockScreen({ onUnlocked }: { onUnlocked: () => void }) {
     if (await unlock('Unlock NEXUS')) onUnlocked();
     else setFailed(true);
   };
+
+  // Back must not navigate the screens under the lock; it leaves the app instead.
+  useEffect(() => {
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+      BackHandler.exitApp();
+      return true;
+    });
+    return () => sub.remove();
+  }, []);
 
   // Prompt once on mount; later attempts come from the Unlock button.
   useEffect(() => {

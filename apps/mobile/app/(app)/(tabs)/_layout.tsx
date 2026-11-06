@@ -8,13 +8,14 @@ const icon = (Icon: LucideIcon) =>
     return <Icon color={color as string} size={size} />;
   };
 
-export const unstable_settings = { initialRouteName: 'notes/index' };
+export const unstable_settings = { anchor: 'notes/index' };
 
 /** Bottom tabs (TDD Section B, Navigation architecture). */
 export default function TabsLayout() {
   const t = useTheme();
   return (
     <Tabs
+      backBehavior="initialRoute"
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: t.colors.primary,

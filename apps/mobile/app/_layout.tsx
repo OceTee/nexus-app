@@ -62,6 +62,7 @@ function Routes() {
       <Stack
         screenOptions={{ headerShown: false, contentStyle: { backgroundColor: t.colors.surface } }}
       >
+        <Stack.Screen name="index" />
         {/* Signed out, or using the app offline without an account. */}
         <Stack.Protected guard={status !== 'authed'}>
           <Stack.Screen name="(auth)" />
