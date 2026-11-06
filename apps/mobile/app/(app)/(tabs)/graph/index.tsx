@@ -1,6 +1,6 @@
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { List, Network, Share2, SlidersHorizontal, X } from 'lucide-react-native';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { FlatList, Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { useLocalQuery } from '@/data/useLocalQuery';
 import { layoutGraph, loadGraph } from '@/features/graph/data';
@@ -25,6 +25,11 @@ const openNote = (noteId: string) =>
 export default function Graph() {
   const t = useTheme();
   const filters = useGraphStore((s) => s.filters);
+  const { tag } = useLocalSearchParams<{ tag?: string }>();
+  // nexus://graph?tag= pre-applies a tag filter.
+  useEffect(() => {
+    if (tag) useGraphStore.getState().setFilters({ tagIds: [tag] });
+  }, [tag]);
   const pinned = useGraphStore((s) => s.pinned);
   const listView = useGraphStore((s) => s.listView);
   const legend = useGraphStore((s) => s.legend);

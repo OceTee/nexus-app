@@ -70,6 +70,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       ['expo-sqlite', { enableFTS: true }],
       'expo-secure-store',
       ['expo-local-authentication', { faceIDPermission: 'Unlock NEXUS with Face ID.' }],
+      ['expo-notifications', { color: '#3B5BDB' }],
       [
         'expo-image-picker',
         {

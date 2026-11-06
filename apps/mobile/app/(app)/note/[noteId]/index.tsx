@@ -33,6 +33,9 @@ import { events } from '@/data/events';
 import { useHistory } from '@/features/editor/useHistory';
 import { WikiAutocomplete } from '@/features/editor/WikiAutocomplete';
 import { getDb } from '@/infra/db';
+import { useSettingsStore } from '@/stores/settings';
+import { useSessionStore } from '@/stores/session';
+import { runSync } from '@/data/sync';
 import {
   ActionSheet,
   alpha,
@@ -80,11 +83,22 @@ export default function NoteEditor() {
   const history = useHistory(EMPTY);
   const autosave = useAutosave(noteId);
   const body = history.present.text;
+  const fontSize = useSettingsStore((s) => s.editorFontSize);
+  const serif = useSettingsStore((s) => s.serifReading);
 
   // Load once per note; our own saves must not reset the text being typed.
   useEffect(() => {
     let alive = true;
-    void repos.notes.get(noteId).then((n) => {
+    const load = async () => {
+      let n = await repos.notes.get(noteId);
+      // A deep link to a note this device has not seen yet: sync once, then retry.
+      if (!n && useSessionStore.getState().status === 'authed') {
+        await runSync('manual');
+        n = await repos.notes.get(noteId);
+      }
+      return n;
+    };
+    void load().then((n) => {
       if (!alive) return;
       if (!n || n.deletedAt) {
         setLoad({ kind: 'missing', trashed: Boolean(n?.deletedAt) });
@@ -442,7 +456,11 @@ export default function NoteEditor() {
               autoFocus={Boolean(params.fresh)}
               selectionColor={alpha(t.colors.primary, 0.3)}
               cursorColor={t.colors.primary}
-              style={[t.type('body'), styles.body, { color: t.colors.ink }]}
+              style={[
+                t.type('body'),
+                styles.body,
+                { color: t.colors.ink, fontSize, lineHeight: Math.round(fontSize * 1.45) },
+              ]}
             />
             {footer}
             {wiki ? (
@@ -463,7 +481,7 @@ export default function NoteEditor() {
         ) : (
           <MarkdownPreview
             body={body}
-            reading={mode === 'read'}
+            reading={mode === 'read' && serif}
             onWikiLink={(target) => void openLink(target)}
             resolved={resolved}
             normalise={normaliseTitle}

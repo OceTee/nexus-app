@@ -118,3 +118,16 @@ adb reverse tcp:9000 tcp:9000
 ```
 
 With `ROLE=all` (the default) the API process also runs the job workers and registers the cron schedules in pg-boss (all times UTC): `backup.dump` 01:00, `accounts.purge` 02:00, `versions.prune` 03:00, `attachments.orphan-sweep` 03:30, `changes.compact` Sundays 04:00, `tokens.prune` 05:00, `account.deletion-reminder` 09:00, `exports.expire` hourly at :15, `audit.prune` monthly. Scheduled jobs use `DATABASE_URL_MAINT`, a role that bypasses row-level security. The nightly backup needs `pg_dump` on the server and `BACKUP_AGE_RECIPIENT`; without them it logs a warning and skips.
+
+## Mobile features that need extra setup
+
+- **Push notifications** register only in a development or production build with an EAS project id
+  (`extra.eas.projectId`); without one, `registerForPush()` quietly skips and everything else works.
+- **Universal links**: the files in `deploy/well-known/.well-known/` are served from
+  `https://app.nexus.example/.well-known/`. Fill in the release signing fingerprint and Apple Team ID
+  first (see `deploy/well-known/README.md`).
+- **Export formats** are specified in [`docs/export-format.md`](export-format.md), with the JSON schema in
+  [`docs/schemas/nexus-export.schema.json`](schemas/nexus-export.schema.json).
+- New native modules since Phase 7 (Skia, image picker, document picker, file system, notifications,
+  task manager, sharing, image manipulator) need a fresh native build: run `npx expo prebuild` and rebuild
+  the APK before running on a device.

@@ -11,6 +11,8 @@ export interface Settings {
   lockTimeoutSec: number;
   telemetry: boolean;
   serifReading: boolean;
+  /** Stronger text and line colours (S-34). */
+  highContrast: boolean;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -20,6 +22,7 @@ export const DEFAULT_SETTINGS: Settings = {
   lockTimeoutSec: 30,
   telemetry: false,
   serifReading: true,
+  highContrast: false,
 };
 
 const KEY = 'settings';

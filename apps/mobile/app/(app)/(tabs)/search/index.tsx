@@ -1,5 +1,5 @@
 import { LIMITS } from '@nexus/shared';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { Clock, Search as SearchIcon, X } from 'lucide-react-native';
 import { useEffect, useMemo, useState } from 'react';
 import { FlatList, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
@@ -50,7 +50,9 @@ function Snippet({ text }: { text: string }) {
 /** S-25 Search: full-text search over every note, offline. */
 export default function Search() {
   const t = useTheme();
-  const [query, setQuery] = useState('');
+  const params = useLocalSearchParams<{ q?: string }>();
+  // nexus://search?q= pre-fills the query.
+  const [query, setQuery] = useState(() => params.q ?? '');
   const [debounced, setDebounced] = useState('');
   const [filters, setFilters] = useState<SearchFilters>({});
   const [dateLabel, setDateLabel] = useState('Any time');

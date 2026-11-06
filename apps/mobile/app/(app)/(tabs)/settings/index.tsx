@@ -1,159 +1,121 @@
-import { router } from 'expo-router';
-import { Lock, LogIn, MailWarning, RefreshCw, Tags, Trash2, User } from 'lucide-react-native';
-import { useEffect, useState } from 'react';
-import { StyleSheet, Switch, View } from 'react-native';
-import { signOut } from '../../../../src/features/auth/authService';
-import { APP_VERSION } from '../../../../src/infra/config';
-import { canUseLock, unlock } from '../../../../src/infra/biometrics';
-import { useSessionStore } from '../../../../src/stores/session';
-import { useSettingsStore } from '../../../../src/stores/settings';
+import { router, type Href } from 'expo-router';
 import {
-  Button,
-  ListRow,
-  Screen,
-  SegmentedControl,
-  Text,
-  toast,
-  useTheme,
-} from '../../../../src/ui';
+  Download,
+  Info,
+  LogIn,
+  MailWarning,
+  Palette,
+  RefreshCw,
+  Shield,
+  ShieldCheck,
+  Smartphone,
+  Tags,
+  Trash2,
+  User,
+  type LucideIcon,
+} from 'lucide-react-native';
+import type { ReactNode } from 'react';
+import { StyleSheet, View } from 'react-native';
+import { signOut } from '@/features/auth/authService';
+import { DeletionBanner } from '@/features/account/DeletionBanner';
+import { APP_VERSION } from '@/infra/config';
+import { unregisterPush } from '@/infra/push';
+import { useSessionStore } from '@/stores/session';
+import { Button, ListRow, Screen, Text, toast } from '@/ui';
 
-/** S-28 Settings (Phase 7 subset: account, lock, appearance; the rest arrives in Phase 11). */
+const go = (href: Href) => () => router.push(href);
+
+/** S-28 Settings home. */
 export default function SettingsTab() {
-  const t = useTheme();
   const status = useSessionStore((s) => s.status);
   const user = useSessionStore((s) => s.user);
-  const settings = useSettingsStore();
-  const [lockAvailable, setLockAvailable] = useState(false);
+  const authed = status === 'authed' && user;
 
-  useEffect(() => {
-    void canUseLock().then(setLockAvailable);
-  }, []);
-
-  const toggleLock = async (on: boolean) => {
-    if (on && !(await unlock('Confirm to turn on the lock'))) return;
-    settings.update({ lockEnabled: on });
-    toast.show(on ? 'App lock on' : 'App lock off');
-  };
+  const row = (icon: LucideIcon, title: string, href: Href, subtitle?: string, last = false) => (
+    <ListRow icon={icon} title={title} subtitle={subtitle} onPress={go(href)} divider={!last} />
+  );
 
   return (
     <Screen title="Settings" scroll>
+      <DeletionBanner />
       <Section label="Account">
-        {status === 'authed' && user ? (
+        {authed ? (
           <>
-            <ListRow
-              icon={User}
-              title={user.displayName || user.email}
-              subtitle={user.displayName ? user.email : undefined}
-            />
-            <ListRow
-              icon={RefreshCw}
-              title="Sync"
-              subtitle="Status, queued changes and errors"
-              onPress={() => router.push('/settings/sync')}
-            />
-            {!user.emailVerified ? (
-              <ListRow
-                icon={MailWarning}
-                title="Confirm your email"
-                subtitle="Needed for sync, attachments and export"
-                onPress={() => router.push('/verify')}
-              />
-            ) : null}
+            {row(
+              User,
+              user.displayName || user.email,
+              '/settings/account',
+              user.displayName ? user.email : 'Profile and security events',
+            )}
+            {!user.emailVerified
+              ? row(
+                  MailWarning,
+                  'Confirm your email',
+                  '/verify',
+                  'Needed for sync, attachments and export',
+                )
+              : null}
+            {row(RefreshCw, 'Sync', '/settings/sync', 'Status, queued changes and errors', true)}
           </>
         ) : (
           <ListRow
             icon={LogIn}
             title="Sign in to sync"
             subtitle="Your notes are only on this device"
-            onPress={() => router.push('/sign-in')}
+            onPress={go('/sign-in')}
+            divider={false}
           />
         )}
       </Section>
 
-      <Section label="Library">
-        <ListRow icon={Tags} title="Tags" onPress={() => router.push('/tags')} />
-        <ListRow
-          icon={Trash2}
-          title="Trash"
-          onPress={() => router.push('/settings/trash')}
-          divider={false}
-        />
-      </Section>
-
       <Section label="Security">
-        <ListRow
-          icon={Lock}
-          title="App lock"
-          subtitle={
-            lockAvailable
-              ? 'Fingerprint, face or passcode'
-              : 'Set up a screen lock on this phone first'
-          }
-          right={
-            <Switch
-              accessibilityLabel="App lock"
-              value={settings.lockEnabled}
-              disabled={!lockAvailable}
-              onValueChange={(v) => void toggleLock(v)}
-              trackColor={{ true: t.colors.primary, false: t.colors.line }}
-            />
-          }
-          divider={settings.lockEnabled}
-        />
-        {settings.lockEnabled ? (
-          <View style={styles.pad}>
-            <Text variant="footnote" tone="inkSoft" style={styles.label}>
-              Lock after the app is in the background for
-            </Text>
-            <SegmentedControl
-              label="Lock timeout"
-              value={String(settings.lockTimeoutSec)}
-              onChange={(v) => settings.update({ lockTimeoutSec: Number(v) })}
-              options={[
-                { value: '0', label: 'Immediately' },
-                { value: '30', label: '30 s' },
-                { value: '60', label: '1 min' },
-                { value: '300', label: '5 min' },
-              ]}
-            />
-          </View>
-        ) : null}
+        {row(
+          Shield,
+          'Security',
+          '/settings/security',
+          authed ? 'Password and app lock' : 'App lock',
+          !authed,
+        )}
+        {authed
+          ? row(Smartphone, 'Devices', '/settings/devices', 'Where you are signed in', true)
+          : null}
       </Section>
 
-      <Section label="Appearance">
-        <View style={styles.pad}>
-          <SegmentedControl
-            label="Theme"
-            value={settings.theme}
-            onChange={(theme) => settings.update({ theme })}
-            options={[
-              { value: 'system', label: 'System' },
-              { value: 'light', label: 'Light' },
-              { value: 'dark', label: 'Dark' },
-            ]}
-          />
-        </View>
+      <Section label="Library">
+        {row(Tags, 'Tags', '/tags')}
+        {row(Trash2, 'Trash', '/settings/trash')}
+        {row(Download, 'Export', '/settings/export', 'Markdown bundle or JSON', true)}
       </Section>
 
-      {status === 'authed' ? (
+      <Section label="App">
+        {row(Palette, 'Appearance', '/settings/appearance', 'Theme, text size, contrast')}
+        {row(ShieldCheck, 'Privacy and data', '/settings/privacy', 'What is stored, telemetry')}
+        {row(Info, 'About', '/settings/about', `NEXUS ${APP_VERSION} · licences`, true)}
+      </Section>
+
+      {authed ? (
         <View style={styles.signOut}>
           <Button
             label="Sign out"
             variant="secondary"
             onPress={() =>
-              void signOut().then(() => toast.show('Signed out. Your notes stay on this device.'))
+              void unregisterPush()
+                .then(signOut)
+                .then(() => toast.show('Signed out. Your notes stay on this device.'))
             }
           />
         </View>
       ) : null}
-      <Text variant="footnote" tone="inkFaint" align="center" style={styles.version}>
-        NEXUS {APP_VERSION}
-      </Text>
+      <View style={styles.footer}>
+        <Text variant="footnote" tone="inkFaint" align="center">
+          NEXUS {APP_VERSION}
+        </Text>
+      </View>
     </Screen>
   );
 }
 
-function Section({ label, children }: { label: string; children: React.ReactNode }) {
+function Section({ label, children }: { label: string; children: ReactNode }) {
   return (
     <View style={styles.section}>
       <Text variant="caption" tone="inkSoft" style={styles.sectionLabel} accessibilityRole="header">
@@ -167,8 +129,6 @@ function Section({ label, children }: { label: string; children: React.ReactNode
 const styles = StyleSheet.create({
   section: { marginBottom: 24, marginHorizontal: -16 },
   sectionLabel: { marginHorizontal: 16, marginBottom: 4 },
-  pad: { paddingHorizontal: 16, paddingVertical: 8 },
-  label: { marginBottom: 8 },
   signOut: { marginTop: 8 },
-  version: { marginTop: 24 },
+  footer: { marginTop: 24, alignItems: 'center' },
 });

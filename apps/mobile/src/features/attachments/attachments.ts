@@ -69,13 +69,23 @@ async function pick(source: PickSource): Promise<Picked | null> {
   };
 }
 
-/** HEIC/HEIF and other image types the API does not accept become JPEG on the device. */
+const MAX_EDGE = 2048;
+
+/**
+ * Images the API does not accept (HEIC/HEIF…) become JPEG, and images over
+ * 2,048 px on the long edge are scaled down (TDD Section G, Image handling).
+ */
 async function normalise(p: Picked): Promise<Picked> {
-  if ((ATTACHMENT_MIME_TYPES as readonly string[]).includes(p.mimeType)) return p;
+  const accepted = (ATTACHMENT_MIME_TYPES as readonly string[]).includes(p.mimeType);
+  const tooBig = Math.max(p.width ?? 0, p.height ?? 0) > MAX_EDGE;
+  if (accepted && (!p.mimeType.startsWith('image/') || !tooBig)) return p;
   if (!p.mimeType.startsWith('image/')) {
     throw new AttachmentError('NEXUS can attach JPEG, PNG, WebP images and PDFs.');
   }
   const ctx = ImageManipulator.manipulate(p.uri);
+  if (tooBig && p.width && p.height) {
+    ctx.resize(p.width >= p.height ? { width: MAX_EDGE } : { height: MAX_EDGE });
+  }
   const image = await ctx.renderAsync();
   const out = await image.saveAsync({ format: SaveFormat.JPEG, compress: 0.85 });
   return {

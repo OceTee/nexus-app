@@ -1,0 +1,19 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": ["REPLACE_WITH_TEAM_ID.com.gladprosper.nexus"],
+        "components": [
+          { "/": "/verify", "?": { "token": "?*" } },
+          { "/": "/reset", "?": { "token": "?*" } },
+          { "/": "/note/*" },
+          { "/": "/collection/*" },
+          { "/": "/tag/*" },
+          { "/": "/graph" },
+          { "/": "/search" },
+          { "/": "/settings/*" }
+        ]
+      }
+    ]
+  }
+}

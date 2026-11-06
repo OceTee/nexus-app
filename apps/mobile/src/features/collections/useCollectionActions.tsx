@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { FolderInput, Pencil, Trash2 } from 'lucide-react-native';
+import { Download, FolderInput, Pencil, Trash2 } from 'lucide-react-native';
 import { useCallback, useState } from 'react';
 import { repos, type Collection } from '@/data/repos';
 import { ActionSheet, ConfirmSheet, toast } from '@/ui';
@@ -41,6 +41,15 @@ export function useCollectionActions(all: Collection[], onDeleted?: () => void) 
                   onPress: () =>
                     router.push({
                       pathname: '/collection/picker',
+                      params: { collectionId: target.id },
+                    }),
+                },
+                {
+                  label: 'Export collection',
+                  icon: Download,
+                  onPress: () =>
+                    router.push({
+                      pathname: '/settings/export',
                       params: { collectionId: target.id },
                     }),
                 },

@@ -1,7 +1,10 @@
-import { Stack } from 'expo-router';
+import { router, Stack } from 'expo-router';
+import { useEffect } from 'react';
 import { useSyncTriggers } from '@/data/sync';
 import { useAttachmentUploads } from '@/features/attachments/useAttachmentUploads';
 import { LockGate } from '@/features/auth/LockGate';
+import { attachPushHandlers, registerForPush } from '@/infra/push';
+import { useSessionStore } from '@/stores/session';
 import { useTheme } from '@/ui';
 
 export const unstable_settings = { anchor: '(tabs)' };
@@ -22,6 +25,21 @@ export default function AppLayout() {
   const t = useTheme();
   useSyncTriggers();
   useAttachmentUploads();
+  const authed = useSessionStore((s) => s.status === 'authed');
+  const pendingLink = useSessionStore((s) => s.pendingLink);
+
+  useEffect(() => {
+    if (!authed) return;
+    void registerForPush();
+    return attachPushHandlers();
+  }, [authed]);
+
+  // A deep link opened while signed out is replayed once the app is available.
+  useEffect(() => {
+    if (!pendingLink) return;
+    useSessionStore.getState().setPendingLink(null);
+    router.push(pendingLink as never);
+  }, [pendingLink]);
   return (
     <LockGate>
       <Stack

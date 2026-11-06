@@ -14,10 +14,16 @@ export interface Theme {
 
 const ThemeContext = createContext<Theme | null>(null);
 
-function buildTheme(scheme: ColorScheme): Theme {
+/** High contrast (S-34): secondary text and lines move one step towards ink. */
+function contrasted(p: Palette): Palette {
+  return { ...p, inkSoft: p.ink, inkFaint: p.inkSoft, line: p.inkFaint };
+}
+
+function buildTheme(scheme: ColorScheme, highContrast = false): Theme {
+  const palette = paletteFor(scheme);
   return {
     scheme,
-    colors: paletteFor(scheme),
+    colors: highContrast ? contrasted(palette) : palette,
     space: tokens.space,
     radius: tokens.radius,
     type: (style) => {
@@ -31,9 +37,10 @@ function buildTheme(scheme: ColorScheme): Theme {
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const system = useColorScheme();
   const preference = useSettingsStore((s) => s.theme);
+  const highContrast = useSettingsStore((s) => s.highContrast);
   const scheme: ColorScheme =
     preference === 'system' ? (system === 'dark' ? 'dark' : 'light') : preference;
-  const theme = useMemo(() => buildTheme(scheme), [scheme]);
+  const theme = useMemo(() => buildTheme(scheme, highContrast), [scheme, highContrast]);
   return <ThemeContext.Provider value={theme}>{children}</ThemeContext.Provider>;
 }
 
