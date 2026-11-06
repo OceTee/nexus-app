@@ -2,7 +2,7 @@ import { LIMITS } from '@nexus/shared';
 import { useState } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native';
 import { useAudit, useMe, useUpdateMe, useUsage } from '@/features/account/api';
-import { relativeDate } from '@/features/notes/format';
+import { formatBytes, relativeDate } from '@/features/notes/format';
 import { OfflineNotice } from '@/features/sync/OfflineNotice';
 import { useSessionStore } from '@/stores/session';
 import { Button, Card, Header, Screen, Text, TextField, toast, useTheme } from '@/ui';
@@ -21,8 +21,6 @@ const ACTION_LABEL: Record<string, string> = {
   'account.deletion_cancelled': 'Deletion cancelled',
   'export.download': 'Export downloaded',
 };
-
-const mb = (n: number) => `${(n / 1_048_576).toFixed(1)} MB`;
 
 /** S-29 Account: display name, email, usage and recent security events. */
 export default function Account() {
@@ -94,7 +92,7 @@ export default function Account() {
               ['Versions kept', usage.data.versions],
               [
                 'Attachments',
-                `${usage.data.attachments} · ${mb(usage.data.attachmentBytes)} of ${mb(usage.data.quotaBytes)}`,
+                `${usage.data.attachments} · ${formatBytes(usage.data.attachmentBytes)} of ${formatBytes(usage.data.quotaBytes)}`,
               ],
             ].map(([k, v]) => (
               <View key={String(k)} style={styles.kv}>

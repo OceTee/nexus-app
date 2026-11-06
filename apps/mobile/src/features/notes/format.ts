@@ -43,3 +43,11 @@ export const TAG_COLOURS = [
   '#BE185D',
   '#64748B',
 ] as const;
+
+/** "512 B", "30 KB", "4.2 MB", "1.1 GB". */
+export function formatBytes(n: number): string {
+  if (n < 1024) return `${n} B`;
+  if (n < 1_048_576) return `${Math.round(n / 1024)} KB`;
+  if (n < 1_073_741_824) return `${(n / 1_048_576).toFixed(1)} MB`;
+  return `${(n / 1_073_741_824).toFixed(1)} GB`;
+}

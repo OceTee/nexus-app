@@ -52,20 +52,30 @@ export default function Versions() {
 
   const sections = useMemo(() => {
     const rows: Row[] = [];
-    local.forEach((v, i) => {
-      const older = local.slice(i + 1).find((o) => o.conflict === 0);
+    const serverRows = server.data?.pages.flatMap((p) => p.items) ?? [];
+    const newestServer = serverRows[0]?.createdAt ?? '';
+    // Once the server's history is here, local copies it already holds would
+    // repeat it; keep only edits not synced yet and conflicted copies.
+    const shownLocal = server.data
+      ? local.filter((v) => v.conflict === 1 || v.created_at > newestServer)
+      : local;
+    shownLocal.forEach((v, i) => {
+      const older = shownLocal.slice(i + 1).find((o) => o.conflict === 0);
       rows.push({
         key: `l-${v.id}`,
         versionId: v.id,
         source: 'local',
         rev: v.rev,
         createdAt: v.created_at,
-        device: v.conflict ? 'This device (conflicted copy)' : 'This device',
+        device: v.conflict
+          ? 'This device (conflicted copy)'
+          : server.data
+            ? 'This device (not synced yet)'
+            : 'This device',
         delta: wordDelta(older?.body_md ?? '', v.body_md),
         conflict: v.conflict === 1,
       });
     });
-    const serverRows = server.data?.pages.flatMap((p) => p.items) ?? [];
     serverRows.forEach((v, i) => {
       const prev = serverRows[i + 1];
       const d = prev ? v.wordCount - prev.wordCount : v.wordCount;
@@ -151,7 +161,7 @@ export default function Versions() {
                   })}
                 </Text>
                 <Text variant="footnote" tone="inkSoft">
-                  {item.device} · {item.delta} words
+                  {item.device} · {item.delta} {/^[+−]1$/.test(item.delta) ? 'word' : 'words'}
                 </Text>
               </View>
               {item.conflict ? (

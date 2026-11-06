@@ -67,7 +67,7 @@ export default function TagDetail() {
             {tag?.name ?? ''}
           </Text>
           <Text variant="footnote" tone="inkFaint">
-            {tag?.noteCount ?? 0} notes
+            {tag?.noteCount === 1 ? '1 note' : `${tag?.noteCount ?? 0} notes`}
           </Text>
         </View>
       </Header>

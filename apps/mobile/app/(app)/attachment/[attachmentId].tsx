@@ -14,6 +14,7 @@ import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { deleteAttachment } from '@/features/attachments/attachments';
+import { formatBytes } from '@/features/notes/format';
 import { isPinned, setPinned } from '@/features/attachments/cache';
 import { useAttachment } from '@/features/attachments/useAttachment';
 import {
@@ -28,9 +29,6 @@ import {
   toast,
   useTheme,
 } from '@/ui';
-
-const formatSize = (n: number) =>
-  n > 1_048_576 ? `${(n / 1_048_576).toFixed(1)} MB` : `${Math.max(1, Math.round(n / 1024))} KB`;
 
 /** Pinch to zoom, pan when zoomed, double-tap to toggle 2x. */
 function ZoomableImage({ uri, label }: { uri: string; label: string }) {
@@ -166,7 +164,7 @@ export default function AttachmentViewer() {
             {row.filename}
           </Text>
           <Text variant="callout" tone="inkSoft">
-            PDF · {formatSize(row.size_bytes)}
+            PDF · {formatBytes(row.size_bytes)}
           </Text>
           <Button
             label="Open"
@@ -177,7 +175,7 @@ export default function AttachmentViewer() {
       )}
       <View style={[styles.meta, { borderTopColor: t.colors.line }]}>
         <Text variant="footnote" tone="inkSoft">
-          {formatSize(row.size_bytes)}
+          {formatBytes(row.size_bytes)}
           {row.width && row.height ? ` · ${row.width} × ${row.height}` : ''}
           {row.status === 'pending' ? ' · waiting to upload' : ''}
           {pinned ? ' · kept offline' : ''}

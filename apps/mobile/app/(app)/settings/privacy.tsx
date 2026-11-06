@@ -6,11 +6,10 @@ import { useLocalQuery } from '@/data/useLocalQuery';
 import { useMe, useUpdateMe } from '@/features/account/api';
 import { cacheUsage, evict } from '@/features/attachments/cache';
 import { getDb } from '@/infra/db';
+import { formatBytes } from '@/features/notes/format';
 import { useSessionStore } from '@/stores/session';
 import { useSettingsStore } from '@/stores/settings';
 import { Button, Card, ConfirmSheet, Header, ListRow, Screen, Text, toast, useTheme } from '@/ui';
-
-const mb = (n: number) => `${(n / 1_048_576).toFixed(1)} MB`;
 
 /** S-35 Privacy and data: what is stored where, and the telemetry choice. */
 export default function Privacy() {
@@ -64,8 +63,8 @@ export default function Privacy() {
             ['Collections', data?.collections],
             ['Tags', data?.tags],
             ['Recent versions', data?.versions],
-            ['Attachment cache', data ? mb(data.cache.cached) : '…'],
-            ['Kept offline', data ? mb(data.cache.pinned) : '…'],
+            ['Attachment cache', data ? formatBytes(data.cache.cached) : '…'],
+            ['Kept offline', data ? formatBytes(data.cache.pinned) : '…'],
           ].map(([k, v]) => (
             <View key={String(k)} style={styles.kv}>
               <Text variant="callout" tone="inkSoft">
@@ -123,7 +122,7 @@ export default function Privacy() {
         title="Clear the attachment cache?"
         body="Downloaded attachments are removed from this device and download again when you open them. Kept-offline files and unsent uploads stay."
         confirmLabel="Clear cache"
-        onConfirm={() => void evict(0).then((n) => toast.show(`Freed ${mb(n)}`))}
+        onConfirm={() => void evict(0).then((n) => toast.show(`Freed ${formatBytes(n)}`))}
       />
     </Screen>
   );
