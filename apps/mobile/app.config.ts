@@ -70,6 +70,14 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       ['expo-sqlite', { enableFTS: true }],
       'expo-secure-store',
       ['expo-local-authentication', { faceIDPermission: 'Unlock NEXUS with Face ID.' }],
+      [
+        'expo-image-picker',
+        {
+          photosPermission: 'NEXUS attaches the photos you choose to your notes.',
+          cameraPermission: 'NEXUS uses the camera to attach photos to your notes.',
+          microphonePermission: false,
+        },
+      ],
       // Fonts are embedded at build time, so nothing loads at launch (cold start budget).
       ['expo-font', { fonts }],
       './plugins/withCmakeVersion',

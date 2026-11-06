@@ -8,3 +8,4 @@ apps/mobile/android
 apps/mobile/ios
 **/__snapshots__
 apps/api/drizzle
+apps/mobile/expo-env.d.ts

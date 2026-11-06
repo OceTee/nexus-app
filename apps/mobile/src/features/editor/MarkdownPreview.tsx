@@ -1,9 +1,27 @@
+import { router } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import { Marked, type Token, type Tokens, type TokenizerAndRendererExtension } from 'marked';
 import { Check, Square } from 'lucide-react-native';
 import { Fragment, useMemo, type ReactNode } from 'react';
 import { ScrollView, StyleSheet, View, type TextStyle } from 'react-native';
+import { AttachmentImage } from '@/features/attachments/AttachmentImage';
 import { alpha, Text, useTheme, type Theme } from '@/ui';
+
+const ATTACHMENT = /^nexus:\/\/attachment\/([0-9a-f-]{36})$/i;
+
+/** Attachment id from a `nexus://attachment/<id>` URL. */
+export function attachmentIdOf(href: string): string | null {
+  return ATTACHMENT.exec(href)?.[1] ?? null;
+}
+
+const openAttachment = (attachmentId: string) =>
+  router.push({ pathname: '/attachment/[attachmentId]', params: { attachmentId } });
+
+const openHref = (href: string) => {
+  const id = attachmentIdOf(href);
+  if (id) openAttachment(id);
+  else void WebBrowser.openBrowserAsync(href);
+};
 
 /** Inline token for `[[Target]]` and `[[Target|alias]]`. */
 interface WikiLinkToken {
@@ -91,12 +109,20 @@ function Block({ tok, ctx }: { tok: Token; ctx: Ctx }): ReactNode {
         </Text>
       );
     }
-    case 'paragraph':
+    case 'paragraph': {
+      const p = tok as Tokens.Paragraph;
+      // An attachment image on its own line renders as a block image.
+      const only = p.tokens.filter((x) => !(x.type === 'text' && !(x as Tokens.Text).text.trim()));
+      if (only.length === 1 && only[0]!.type === 'image') {
+        const id = attachmentIdOf((only[0] as Tokens.Image).href);
+        if (id) return <AttachmentImage id={id} onPress={() => openAttachment(id)} />;
+      }
       return (
         <Text style={[ctx.base, { color: t.colors.ink }, styles.para]}>
-          <Inline tokens={(tok as Tokens.Paragraph).tokens} ctx={ctx} />
+          <Inline tokens={p.tokens} ctx={ctx} />
         </Text>
       );
+    }
     case 'text': {
       const tt = tok as Tokens.Text;
       return (
@@ -247,7 +273,7 @@ function Inline({ tokens, ctx }: { tokens: Token[] | undefined; ctx: Ctx }): Rea
           <Text
             key={i}
             accessibilityRole="link"
-            onPress={() => void WebBrowser.openBrowserAsync(link.href)}
+            onPress={() => openHref(link.href)}
             style={[styles.link, { color: t.colors.primary }]}
           >
             <Inline tokens={link.tokens} ctx={ctx} />
@@ -256,9 +282,15 @@ function Inline({ tokens, ctx }: { tokens: Token[] | undefined; ctx: Ctx }): Rea
       }
       case 'image': {
         const img = tok as Tokens.Image;
+        const id = attachmentIdOf(img.href);
         return (
-          <Text key={i} style={{ color: t.colors.inkSoft }}>
-            {`[${img.text || 'image'}]`}
+          <Text
+            key={i}
+            accessibilityRole={id ? 'link' : 'text'}
+            onPress={id ? () => openAttachment(id) : undefined}
+            style={{ color: id ? t.colors.primary : t.colors.inkSoft }}
+          >
+            {`📎 ${img.text || 'image'}`}
           </Text>
         );
       }

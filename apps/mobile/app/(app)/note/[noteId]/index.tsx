@@ -16,6 +16,7 @@ import { AppState, Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import { purgeNotes, repos, type Note } from '@/data/repos';
 import { useLocalQuery } from '@/data/useLocalQuery';
+import { AttachmentStrip } from '@/features/attachments/AttachmentStrip';
 import { EditorToolbar, type ToolbarAction } from '@/features/editor/EditorToolbar';
 import { MarkdownPreview } from '@/features/editor/MarkdownPreview';
 import {
@@ -218,6 +219,12 @@ export default function NoteEditor() {
         return apply(code(cur.text, cur.selection));
       case 'link':
         return apply(insert(cur.text, cur.selection, '[[]]', 2));
+      case 'attach':
+        // The picker appends the link to the saved note; the editor reloads it.
+        void autosave
+          .flush()
+          .then(() => router.push({ pathname: '/attachment/pick', params: { noteId } }));
+        return;
       case 'undo':
       case 'redo': {
         const restored = a === 'undo' ? history.undo() : history.redo();
@@ -407,6 +414,7 @@ export default function NoteEditor() {
               ))}
             </View>
           ) : null}
+          <AttachmentStrip noteId={noteId} />
           <SegmentedControl label="Mode" options={MODES} value={mode} onChange={setMode} />
         </View>
 

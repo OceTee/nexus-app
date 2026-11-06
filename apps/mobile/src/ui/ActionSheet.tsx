@@ -1,5 +1,5 @@
 import type { LucideIcon } from 'lucide-react-native';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet } from 'react-native';
 import { Sheet } from './primitives';
 import { Text } from './Text';
 import { useTheme } from './theme';
@@ -27,12 +27,12 @@ export function ActionSheet({
   const t = useTheme();
   return (
     <Sheet visible={visible} onClose={onClose} {...(title ? { title } : {})}>
-      <View accessibilityRole="menu">
-        {actions.map(({ label, icon: Icon, onPress, destructive, disabled }) => {
+      <ScrollView accessibilityRole="menu" style={styles.list}>
+        {actions.map(({ label, icon: Icon, onPress, destructive, disabled }, i) => {
           const colour = destructive ? t.colors.danger : t.colors.ink;
           return (
             <Pressable
-              key={label}
+              key={`${i}-${label}`}
               accessibilityRole="menuitem"
               accessibilityState={{ disabled: Boolean(disabled) }}
               disabled={disabled}
@@ -53,7 +53,7 @@ export function ActionSheet({
             </Pressable>
           );
         })}
-      </View>
+      </ScrollView>
     </Sheet>
   );
 }
@@ -117,6 +117,7 @@ export function ConfirmSheet({
 }
 
 const styles = StyleSheet.create({
+  list: { maxHeight: 440 },
   row: { minHeight: 52, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20 },
   icon: { marginRight: 16 },
   disabled: { opacity: 0.4 },

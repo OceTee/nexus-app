@@ -4,6 +4,7 @@ import {
   Heading,
   Italic,
   Link2,
+  Paperclip,
   List,
   ListTodo,
   Redo2,
@@ -14,7 +15,7 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import { IconButton, useTheme } from '@/ui';
 
 export type ToolbarAction =
-  'bold' | 'italic' | 'heading' | 'list' | 'task' | 'code' | 'link' | 'undo' | 'redo';
+  'bold' | 'italic' | 'heading' | 'list' | 'task' | 'code' | 'link' | 'attach' | 'undo' | 'redo';
 
 const ITEMS: { action: ToolbarAction; icon: LucideIcon; label: string }[] = [
   { action: 'bold', icon: Bold, label: 'Bold' },
@@ -24,6 +25,7 @@ const ITEMS: { action: ToolbarAction; icon: LucideIcon; label: string }[] = [
   { action: 'task', icon: ListTodo, label: 'Task' },
   { action: 'code', icon: Braces, label: 'Code' },
   { action: 'link', icon: Link2, label: 'Link to a note' },
+  { action: 'attach', icon: Paperclip, label: 'Attach a file' },
 ];
 
 /** Keyboard toolbar (S-09): formatting on the left, undo and redo pinned right. */

@@ -15,6 +15,16 @@ export interface SearchHit {
   title: string;
   snippet: string;
   rank: number;
+  updatedAt?: string;
+  collectionId?: string | null;
+}
+
+export interface SearchFilters {
+  tagId?: string;
+  collectionId?: string;
+  /** ISO date: only notes edited since. */
+  since?: string;
+  hasAttachment?: boolean;
 }
 
 /**
@@ -93,28 +103,68 @@ export class LinksRepo {
     );
   }
 
-  /** Ranked search with snippets; the title weighs 4× the body (bm25). */
-  async search(input: string, limit = 50): Promise<SearchHit[]> {
+  /**
+   * Ranked search with snippets (S-25); the title weighs 4x the body (bm25).
+   * Filters narrow by tag, collection, edit date and attachments. If FTS still
+   * rejects the query, it is re-run as one quoted phrase.
+   */
+  async search(input: string, filters: SearchFilters = {}, limit = 50): Promise<SearchHit[]> {
     const q = ftsQuery(input);
     if (!q) return [];
+    try {
+      return await this.runSearch(q, filters, limit);
+    } catch {
+      const phrase = `"${input.replace(/"/g, '').trim()}"`;
+      return phrase === '""' ? [] : this.runSearch(phrase, filters, limit);
+    }
+  }
+
+  private async runSearch(q: string, f: SearchFilters, limit: number): Promise<SearchHit[]> {
+    const where = ['notes_fts MATCH ?', 'n.deleted_at IS NULL'];
+    const params: (string | number)[] = [q];
+    if (f.tagId) {
+      where.push(
+        'EXISTS (SELECT 1 FROM note_tags t WHERE t.note_id = n.id AND t.tag_id = ? AND t.deleted_at IS NULL)',
+      );
+      params.push(f.tagId);
+    }
+    if (f.collectionId) {
+      where.push('n.collection_id = ?');
+      params.push(f.collectionId);
+    }
+    if (f.since) {
+      where.push('n.updated_at >= ?');
+      params.push(f.since);
+    }
+    if (f.hasAttachment) {
+      where.push(
+        'EXISTS (SELECT 1 FROM attachments a WHERE a.note_id = n.id AND a.deleted_at IS NULL)',
+      );
+    }
+    params.push(limit);
     const rows = await this.db().getAllAsync<{
       id: string;
       title: string;
       snippet: string;
       rank: number;
+      updated_at: string;
+      collection_id: string | null;
     }>(
-      `SELECT n.id, n.title, snippet(notes_fts, 1, '«', '»', '…', 12) AS snippet,
+      `SELECT n.id, n.title, n.updated_at, n.collection_id,
+              snippet(notes_fts, 1, '«', '»', '…', 12) AS snippet,
               bm25(notes_fts, 4.0, 1.0) AS rank
        FROM notes_fts JOIN notes n ON n.rowid = notes_fts.rowid
-       WHERE notes_fts MATCH ? AND n.deleted_at IS NULL
+       WHERE ${where.join(' AND ')}
        ORDER BY rank LIMIT ?`,
-      [q, limit],
+      params,
     );
     return rows.map((r) => ({
       noteId: r.id,
       title: r.title,
       snippet: r.snippet,
       rank: Number(r.rank),
+      updatedAt: r.updated_at,
+      collectionId: r.collection_id,
     }));
   }
 }

@@ -1,5 +1,6 @@
 import { Stack } from 'expo-router';
 import { useSyncTriggers } from '@/data/sync';
+import { useAttachmentUploads } from '@/features/attachments/useAttachmentUploads';
 import { LockGate } from '@/features/auth/LockGate';
 import { useTheme } from '@/ui';
 
@@ -13,11 +14,14 @@ const MODALS = [
   'collection/edit',
   'collection/picker',
   'tag/edit',
+  'attachment/pick',
+  'graph/filters',
 ] as const;
 
 export default function AppLayout() {
   const t = useTheme();
   useSyncTriggers();
+  useAttachmentUploads();
   return (
     <LockGate>
       <Stack
