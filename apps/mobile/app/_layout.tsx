@@ -4,6 +4,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { queryClient } from '../src/data/queries/client';
@@ -40,16 +41,18 @@ export default function RootLayout() {
 
   if (!ready) return null;
   return (
-    <SafeAreaProvider>
-      <ThemeProvider>
-        <QueryClientProvider client={queryClient}>
-          <KeyboardProvider>
-            {dbError ? <DatabaseError message={dbError} /> : <Routes />}
-            <ToastHost />
-          </KeyboardProvider>
-        </QueryClientProvider>
-      </ThemeProvider>
-    </SafeAreaProvider>
+    <GestureHandlerRootView style={styles.root}>
+      <SafeAreaProvider>
+        <ThemeProvider>
+          <QueryClientProvider client={queryClient}>
+            <KeyboardProvider>
+              {dbError ? <DatabaseError message={dbError} /> : <Routes />}
+              <ToastHost />
+            </KeyboardProvider>
+          </QueryClientProvider>
+        </ThemeProvider>
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }
 
@@ -94,6 +97,7 @@ function DatabaseError({ message }: { message: string }) {
 }
 
 const styles = StyleSheet.create({
+  root: { flex: 1 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 },
   gap: { marginVertical: 16 },
 });

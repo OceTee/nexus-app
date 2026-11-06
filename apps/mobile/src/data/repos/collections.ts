@@ -50,6 +50,10 @@ export class CollectionsRepo {
     }));
   }
 
+  async get(id: string): Promise<Collection | null> {
+    return (await this.list()).find((c) => c.id === id) ?? null;
+  }
+
   /** Creates, renames or moves a collection; depth ≤ 6 and no cycles (BR-07). */
   async save(input: {
     id?: string;

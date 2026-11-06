@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { Lock, LogIn, MailWarning, User } from 'lucide-react-native';
+import { Lock, LogIn, MailWarning, Tags, Trash2, User } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
 import { StyleSheet, Switch, View } from 'react-native';
 import { signOut } from '../../../../src/features/auth/authService';
@@ -62,6 +62,16 @@ export default function SettingsTab() {
             onPress={() => router.push('/sign-in')}
           />
         )}
+      </Section>
+
+      <Section label="Library">
+        <ListRow icon={Tags} title="Tags" onPress={() => router.push('/tags')} />
+        <ListRow
+          icon={Trash2}
+          title="Trash"
+          onPress={() => router.push('/settings/trash')}
+          divider={false}
+        />
       </Section>
 
       <Section label="Security">

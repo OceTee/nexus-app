@@ -57,6 +57,30 @@ export class LinksRepo {
     });
   }
 
+  /**
+   * Notes whose text mentions this note's title without linking it (S-14,
+   * "Unlinked mentions"), via an FTS phrase query on the title.
+   */
+  async unlinkedMentions(noteId: string, title: string): Promise<Backlink[]> {
+    const q = ftsQuery(title, false);
+    if (!q) return [];
+    const rows = await this.db().getAllAsync<{ id: string; title: string; body_md: string }>(
+      `SELECT n.id, n.title, n.body_md FROM notes_fts JOIN notes n ON n.rowid = notes_fts.rowid
+       WHERE notes_fts MATCH ? AND n.deleted_at IS NULL AND n.id != ?
+         AND NOT EXISTS (SELECT 1 FROM note_links l
+                         WHERE l.source_note_id = n.id AND l.target_note_id = ?)
+       ORDER BY n.updated_at DESC LIMIT 20`,
+      [`body_text : (${q.split(' ').join(' + ')})`, noteId, noteId],
+    );
+    const needle = title.toLowerCase();
+    return rows.flatMap((r) => {
+      const at = r.body_md.toLowerCase().indexOf(needle);
+      return at < 0
+        ? []
+        : [{ noteId: r.id, title: r.title, context: sentenceAround(r.body_md, at) }];
+    });
+  }
+
   /** Note titles starting with the typed text, for `[[` autocomplete (8 results). */
   async autocomplete(prefix: string): Promise<{ id: string; title: string }[]> {
     const q = ftsQuery(prefix);

@@ -43,8 +43,12 @@ export interface NoteInput {
 
 export interface NoteListFilter {
   collectionId?: string;
+  /** Notes outside any collection. */
+  unfiled?: boolean;
   tagId?: string;
   pinned?: boolean;
+  /** `recent` ignores pinning and orders by last edit only. */
+  order?: 'default' | 'recent';
   limit?: number;
   offset?: number;
 }
@@ -88,6 +92,7 @@ export class NotesRepo {
       where.push('n.collection_id = ?');
       params.push(f.collectionId);
     }
+    if (f.unfiled) where.push('n.collection_id IS NULL');
     if (f.pinned !== undefined) {
       where.push('n.is_pinned = ?');
       params.push(f.pinned ? 1 : 0);
@@ -101,10 +106,53 @@ export class NotesRepo {
     params.push(f.limit ?? 200, f.offset ?? 0);
     const rows = await this.db().getAllAsync<NoteRow>(
       `SELECT n.* FROM notes n WHERE ${where.join(' AND ')}
-       ORDER BY n.is_pinned DESC, n.updated_at DESC LIMIT ? OFFSET ?`,
+       ORDER BY ${f.order === 'recent' ? '' : 'n.is_pinned DESC, '}n.updated_at DESC LIMIT ? OFFSET ?`,
       params,
     );
     return rows.map(toNote);
+  }
+
+  /** Live note whose title normalises to the same text (wiki-links resolve by title). */
+  async findByTitle(title: string, exceptId?: string): Promise<Note | null> {
+    const norm = normaliseTitle(title);
+    if (!norm) return null;
+    const r = await this.db().getFirstAsync<NoteRow>(
+      `SELECT * FROM notes WHERE title_norm = ? AND deleted_at IS NULL AND id != ?
+       ORDER BY created_at LIMIT 1`,
+      [norm, exceptId ?? ''],
+    );
+    return r ? toNote(r) : null;
+  }
+
+  async setPinned(id: string, isPinned: boolean): Promise<void> {
+    const n = await this.get(id);
+    if (n && n.isPinned !== isPinned) {
+      await this.save({ id, title: n.title, bodyMd: n.bodyMd, isPinned });
+    }
+  }
+
+  async move(id: string, collectionId: string | null): Promise<void> {
+    const n = await this.get(id);
+    if (n && n.collectionId !== collectionId) {
+      await this.save({ id, title: n.title, bodyMd: n.bodyMd, collectionId });
+    }
+  }
+
+  /** Wraps the first unlinked mention of `title` in a note's body with [[ ]] (S-14). */
+  async linkMention(sourceId: string, title: string): Promise<boolean> {
+    const n = await this.get(sourceId);
+    if (!n) return false;
+    const escaped = title.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    // Whole-word match that is not already inside [[ ]].
+    const re = new RegExp(
+      `(?<!\\[\\[)(?<![\\p{L}\\p{N}])(${escaped})(?![\\p{L}\\p{N}])(?!\\]\\])`,
+      'iu',
+    );
+    const m = re.exec(n.bodyMd);
+    if (!m) return false;
+    const bodyMd = `${n.bodyMd.slice(0, m.index)}[[${m[1]}]]${n.bodyMd.slice(m.index + m[1]!.length)}`;
+    await this.save({ id: sourceId, title: n.title, bodyMd });
+    return true;
   }
 
   async trash(): Promise<Note[]> {
@@ -255,6 +303,25 @@ export class NotesRepo {
     });
     events.emit('notes', 'note_links', 'outbox');
   }
+}
+
+/** Permanently removes trashed notes from this device (S-37). The delete op is already queued. */
+export async function purgeNotes(db: SqlDb, ids: string[]): Promise<void> {
+  if (ids.length === 0) return;
+  await transaction(db, async (tx) => {
+    for (const id of ids) {
+      const row = await tx.getFirstAsync<NoteRow>(`SELECT deleted_at FROM notes WHERE id = ?`, [
+        id,
+      ]);
+      if (!row?.deleted_at) continue;
+      await tx.runAsync(`DELETE FROM note_links WHERE source_note_id = ?`, [id]);
+      await tx.runAsync(`DELETE FROM note_tags WHERE note_id = ?`, [id]);
+      await tx.runAsync(`DELETE FROM note_versions_local WHERE note_id = ?`, [id]);
+      await tx.runAsync(`DELETE FROM conflicts WHERE note_id = ?`, [id]);
+      await tx.runAsync(`DELETE FROM notes WHERE id = ?`, [id]);
+    }
+  });
+  events.emit('notes', 'note_links', 'note_tags', 'note_versions_local', 'conflicts');
 }
 
 /** Replaces a note's outgoing links with those in its body, resolving known titles. */

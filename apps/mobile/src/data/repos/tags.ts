@@ -46,6 +46,10 @@ export class TagsRepo {
     }));
   }
 
+  async get(id: string): Promise<Tag | null> {
+    return (await this.list()).find((t) => t.id === id) ?? null;
+  }
+
   async forNote(noteId: string): Promise<Tag[]> {
     const ids = await this.db().getAllAsync<{ tag_id: string }>(
       `SELECT tag_id FROM note_tags WHERE note_id = ? AND deleted_at IS NULL ORDER BY created_at`,
@@ -116,6 +120,21 @@ export class TagsRepo {
       });
     });
     events.emit('tags', 'note_tags', 'outbox');
+  }
+
+  /**
+   * Merges `sourceId` into `targetId` (S-22): every note carrying the source
+   * gains the target, then the source is deleted. Syncs as note_tag.add ops
+   * plus tag.delete.
+   */
+  async merge(sourceId: string, targetId: string): Promise<void> {
+    if (sourceId === targetId) return;
+    const notes = await this.db().getAllAsync<{ note_id: string }>(
+      `SELECT note_id FROM note_tags WHERE tag_id = ? AND deleted_at IS NULL`,
+      [sourceId],
+    );
+    for (const { note_id } of notes) await this.setMembership(note_id, targetId, true);
+    await this.remove(sourceId);
   }
 
   /** Adds or removes a tag on a note with the shared set-merge rule (BR-10). */
