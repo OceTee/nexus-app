@@ -50,6 +50,26 @@ const flows = readdirSync(join(here, 'flows'))
   .sort()
   .filter((f) => !only || only.some((o) => f.startsWith(o)));
 
+const GRANTS = [
+  'android.permission.POST_NOTIFICATIONS',
+  'android.permission.READ_MEDIA_IMAGES',
+  'android.permission.CAMERA',
+];
+
+/** The texts on screen right now, so a failure says what was showing instead. */
+function screenText() {
+  try {
+    const xml = execFileSync('adb', ['-s', device, 'exec-out', 'uiautomator', 'dump', '/dev/tty'], {
+      encoding: 'utf8',
+      timeout: 30000,
+    });
+    const seen = [...xml.matchAll(/(?:text|content-desc)="([^"]+)"/g)].map((m) => m[1]);
+    return [...new Set(seen)].slice(0, 25).join(' · ') || '(nothing readable)';
+  } catch {
+    return '(screen dump failed)';
+  }
+}
+
 const results = [];
 for (const file of flows) {
   const tags = /^tags:\s*\[([^\]]*)\]/m
@@ -62,6 +82,15 @@ for (const file of flows) {
     continue;
   }
   adb('shell', 'pm', 'clear', APP_ID);
+  // pm clear also revokes runtime permissions; grant them so no system prompt
+  // (Android 13+ notifications, photo access) covers the app mid-flow.
+  for (const perm of GRANTS) {
+    try {
+      adb('shell', 'pm', 'grant', APP_ID, perm);
+    } catch {
+      // Not declared or not runtime on this Android version.
+    }
+  }
   for (const port of ['4000', '8081', '9000']) adb('reverse', `tcp:${port}`, `tcp:${port}`);
   console.log(`\n▶ ${file}`);
   const run = spawnSync(
@@ -92,7 +121,9 @@ for (const file of flows) {
         .filter((l) => /FAILED|not visible|Assertion|Exception|Error|timed out/i.test(l))
         .slice(-4)
         .join(' | ');
-  results.push({ file, status: passed ? 'passed' : 'FAILED', reason });
+  const screen = passed ? '' : screenText();
+  if (!passed) console.log(`Screen at failure: ${screen}`);
+  results.push({ file, status: passed ? 'passed' : 'FAILED', reason, screen });
 }
 
 console.log('\nResults');
@@ -103,7 +134,9 @@ for (const r of results) {
 if (process.env.GITHUB_ACTIONS) {
   const esc = (t) => t.replace(/%/g, '%25').replace(/\r/g, '%0D').replace(/\n/g, '%0A');
   for (const r of results.filter((x) => x.status === 'FAILED')) {
-    console.log(`::error title=E2E ${r.file}::${esc(r.reason || 'failed (see e2e-results)')}`);
+    console.log(
+      `::error title=E2E ${r.file}::${esc(`${r.reason || 'failed'} || SCREEN: ${r.screen}`)}`,
+    );
   }
   const passedCount = results.filter((x) => x.status === 'passed').length;
   console.log(

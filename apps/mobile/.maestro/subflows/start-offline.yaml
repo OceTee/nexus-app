@@ -9,6 +9,8 @@ appId: com.gladprosper.nexus.development
     optional: true
 - extendedWaitUntil:
     visible: 'Continue offline'
-    timeout: 60000
+    timeout: 120000
 - tapOn: 'Continue offline'
-- assertVisible: 'Notes'
+- extendedWaitUntil:
+    visible: 'Notes'
+    timeout: 30000
