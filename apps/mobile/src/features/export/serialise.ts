@@ -50,8 +50,11 @@ export function yamlString(s: string): string {
   return `"${s.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\n/g, '\\n').replace(/\r/g, '\\r').replace(/\t/g, '\\t')}"`;
 }
 
-const yamlList = (items: string[]) =>
-  items.length === 0 ? '[]' : `\n${items.map((i) => `  - ${yamlString(i)}`).join('\n')}`;
+/** `key: []`, or `key:` followed by an indented list (no trailing spaces). */
+const yamlList = (key: string, items: string[]) =>
+  items.length === 0
+    ? `${key}: []`
+    : `${key}:\n${items.map((i) => `  - ${yamlString(i)}`).join('\n')}`;
 
 /** The front-matter block plus body for one note. */
 export function noteToMarkdown(n: ExportNote, collectionPath: string, tagNames: string[]): string {
@@ -62,8 +65,8 @@ export function noteToMarkdown(n: ExportNote, collectionPath: string, tagNames: 
     `created: ${n.createdAt}`,
     `updated: ${n.updatedAt}`,
     `collection: ${collectionPath ? yamlString(collectionPath) : 'null'}`,
-    `tags: ${yamlList(tagNames)}`,
-    `links: ${yamlList(n.links)}`,
+    yamlList('tags', tagNames),
+    yamlList('links', n.links),
     ...(n.isPinned ? ['pinned: true'] : []),
     '---',
     '',

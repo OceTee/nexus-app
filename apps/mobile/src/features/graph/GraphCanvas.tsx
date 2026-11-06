@@ -9,7 +9,7 @@ import {
   Text as SkiaText,
 } from '@shopify/react-native-skia';
 import { useEffect, useMemo, useRef } from 'react';
-import { Platform, StyleSheet, type LayoutChangeEvent } from 'react-native';
+import { Platform, StyleSheet, View, type LayoutChangeEvent } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { useDerivedValue, useSharedValue } from 'react-native-reanimated';
 import { useTheme } from '@/ui';
@@ -96,7 +96,7 @@ export function GraphCanvas({
     const minY = Math.min(...ys);
     const maxY = Math.max(...ys);
     const s = Math.min(
-      2,
+      1.5,
       Math.max(0.15, Math.min(width / (maxX - minX + 80), height / (maxY - minY + 80))),
     );
     scale.set(s);
@@ -207,43 +207,46 @@ export function GraphCanvas({
 
   return (
     <GestureDetector gesture={gesture}>
-      <Canvas style={styles.fill} onLayout={onLayout} accessibilityLabel="Graph of notes">
-        <Group transform={transform}>
-          <Path path={paths.links} style="stroke" strokeWidth={1.2} color={t.colors.line} />
-          <Path path={paths.tags} style="stroke" strokeWidth={1} color={t.colors.inkFaint}>
-            <DashPathEffect intervals={[4, 4]} />
-          </Path>
-          {nodes.map((n) => {
-            const selected = n.id === selectedId;
-            const dim = highlight.size > 0 && !highlight.has(n.id);
-            const colour = selected
-              ? t.colors.accent
-              : n.degree === 0
-                ? t.colors.inkFaint
-                : t.colors.primary;
-            return (
-              <Circle
-                key={n.id}
-                cx={n.x}
-                cy={n.y}
-                r={selected ? n.r + 3 : n.r}
-                color={colour}
-                opacity={dim ? 0.25 : 1}
+      {/* Skia's Canvas has no onLayout on the new architecture; measure the wrapper. */}
+      <View style={styles.fill} onLayout={onLayout}>
+        <Canvas style={styles.fill} accessibilityLabel="Graph of notes">
+          <Group transform={transform}>
+            <Path path={paths.links} style="stroke" strokeWidth={1.2} color={t.colors.line} />
+            <Path path={paths.tags} style="stroke" strokeWidth={1} color={t.colors.inkFaint}>
+              <DashPathEffect intervals={[4, 4]} />
+            </Path>
+            {nodes.map((n) => {
+              const selected = n.id === selectedId;
+              const dim = highlight.size > 0 && !highlight.has(n.id);
+              const colour = selected
+                ? t.colors.accent
+                : n.degree === 0
+                  ? t.colors.inkFaint
+                  : t.colors.primary;
+              return (
+                <Circle
+                  key={n.id}
+                  cx={n.x}
+                  cy={n.y}
+                  r={selected ? n.r + 3 : n.r}
+                  color={colour}
+                  opacity={dim ? 0.25 : 1}
+                />
+              );
+            })}
+            {labelled.map((n) => (
+              <SkiaText
+                key={`l-${n.id}`}
+                x={n.x + n.r + 3}
+                y={n.y + 4}
+                text={n.title.length > 28 ? `${n.title.slice(0, 27)}…` : n.title}
+                font={font}
+                color={t.colors.inkSoft}
               />
-            );
-          })}
-          {labelled.map((n) => (
-            <SkiaText
-              key={`l-${n.id}`}
-              x={n.x + n.r + 3}
-              y={n.y + 4}
-              text={n.title.length > 28 ? `${n.title.slice(0, 27)}…` : n.title}
-              font={font}
-              color={t.colors.inkSoft}
-            />
-          ))}
-        </Group>
-      </Canvas>
+            ))}
+          </Group>
+        </Canvas>
+      </View>
     </GestureDetector>
   );
 }

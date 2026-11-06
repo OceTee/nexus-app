@@ -16,6 +16,8 @@ import { collectionPath } from '@/features/notes/useNoteDecor';
 import { useIsOffline } from '@/features/sync/OfflineNotice';
 import { ActionSheet, alpha, Button, Header, Screen, Sheet, Text, toast, useTheme } from '@/ui';
 
+const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
+
 const PHASE_LABEL: Record<ExportProgress['phase'], string> = {
   notes: 'Writing notes',
   attachments: 'Adding attachments',
@@ -163,8 +165,10 @@ export default function Export() {
         ) : null}
 
         <Text variant="callout" tone="inkSoft" style={styles.estimate}>
-          {data?.scope.notes.length ?? 0} notes
-          {includeAttachments ? ` · ${data?.scope.attachments.length ?? 0} attachments` : ''}
+          {plural(data?.scope.notes.length ?? 0, 'note')}
+          {includeAttachments
+            ? ` · ${plural(data?.scope.attachments.length ?? 0, 'attachment')}`
+            : ''}
           {needDownload > 0 ? ` (${needDownload} need downloading)` : ''}
         </Text>
         {needDownload > 0 && offline ? (
@@ -222,7 +226,8 @@ export default function Export() {
           ) : result ? (
             <>
               <Text variant="callout">
-                {result.notes} notes and {result.attachments} attachments in {result.file.name}.
+                {plural(result.notes, 'note')} and {plural(result.attachments, 'attachment')} in{' '}
+                {result.file.name}.
               </Text>
               {result.omitted.length > 0 ? (
                 <Text variant="footnote" tone="danger">

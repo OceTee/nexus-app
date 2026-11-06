@@ -13,7 +13,8 @@ import {
 } from 'lucide-react-native';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AppState, Pressable, StyleSheet, TextInput, View } from 'react-native';
-import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
+import { KeyboardAvoidingView, useKeyboardState } from 'react-native-keyboard-controller';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { purgeNotes, repos, type Note } from '@/data/repos';
 import { useLocalQuery } from '@/data/useLocalQuery';
 import { AttachmentStrip } from '@/features/attachments/AttachmentStrip';
@@ -84,6 +85,8 @@ export default function NoteEditor() {
   const autosave = useAutosave(noteId);
   const body = history.present.text;
   const fontSize = useSettingsStore((s) => s.editorFontSize);
+  const keyboardOpen = useKeyboardState((k) => k.isVisible);
+  const insets = useSafeAreaInsets();
   const serif = useSettingsStore((s) => s.serifReading);
 
   // Load once per note; our own saves must not reset the text being typed.
@@ -315,7 +318,12 @@ export default function NoteEditor() {
       <Pressable
         accessibilityRole="button"
         onPress={() => router.push({ pathname: '/note/[noteId]/backlinks', params: { noteId } })}
-        style={[styles.backlinks, { borderColor: t.colors.line }]}
+        style={[
+          styles.backlinks,
+          // The preview already pads its content; the editor does not.
+          mode === 'edit' && styles.backlinksInset,
+          { borderColor: t.colors.line },
+        ]}
       >
         <Text variant="callout" style={{ color: t.colors.primary }}>
           {live?.backlinks === 1 ? '1 note links here' : `${live?.backlinks} notes link here`} ›
@@ -324,8 +332,16 @@ export default function NoteEditor() {
     ) : null;
 
   return (
-    <Screen edges={['top', 'left', 'right', 'bottom']}>
-      <KeyboardAvoidingView behavior="padding" style={styles.flex}>
+    // The bottom inset applies only while the keyboard is closed; counting it
+    // under the keyboard too pushed the toolbar behind the keyboard.
+    <Screen edges={['top', 'left', 'right']}>
+      <KeyboardAvoidingView
+        behavior="padding"
+        // Edge-to-edge: the view is measured from below the status bar, which
+        // otherwise leaves the toolbar under the keyboard by that much.
+        keyboardVerticalOffset={insets.top}
+        style={styles.flex}
+      >
         <Header
           onBack={() => {
             void leave().then(() =>
@@ -488,6 +504,7 @@ export default function NoteEditor() {
             footer={footer}
           />
         )}
+        <View style={{ height: keyboardOpen ? 0 : insets.bottom }} />
       </KeyboardAvoidingView>
 
       <ActionSheet
@@ -571,8 +588,8 @@ const styles = StyleSheet.create({
   sub: { paddingHorizontal: 16, paddingTop: 8, gap: 8 },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   body: { flex: 1, paddingHorizontal: 16, paddingTop: 12, paddingBottom: 24 },
+  backlinksInset: { marginHorizontal: 16 },
   backlinks: {
-    marginHorizontal: 16,
     marginVertical: 8,
     paddingVertical: 10,
     borderTopWidth: StyleSheet.hairlineWidth,

@@ -4,6 +4,7 @@ import { CheckCircle2 } from 'lucide-react-native';
 import { useState } from 'react';
 import { StyleSheet, TextInput, useWindowDimensions, View } from 'react-native';
 import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { repos } from '@/data/repos';
 import { useLocalQuery } from '@/data/useLocalQuery';
 import { MarkdownPreview } from '@/features/editor/MarkdownPreview';
@@ -18,6 +19,7 @@ const time = (iso: string) =>
 export default function ConflictScreen() {
   const t = useTheme();
   const { width } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
   const { noteId } = useLocalSearchParams<{ noteId: string }>();
   const [merging, setMerging] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -78,7 +80,11 @@ export default function ConflictScreen() {
   if (merging !== null) {
     return (
       <Screen edges={['top', 'left', 'right', 'bottom']}>
-        <KeyboardAvoidingView behavior="padding" style={styles.flex}>
+        <KeyboardAvoidingView
+          behavior="padding"
+          keyboardVerticalOffset={insets.top}
+          style={styles.flex}
+        >
           <Header title="Merge" onBack={() => setMerging(null)} backLabel="Back to comparison" />
           <Text variant="footnote" tone="inkSoft" style={styles.pad}>
             The server text comes first; paragraphs only on this device follow the line.

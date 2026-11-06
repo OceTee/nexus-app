@@ -50,12 +50,25 @@ export function EditorToolbar({
             key={i.action}
             icon={i.icon}
             label={i.label}
+            width={38}
             onPress={() => onAction(i.action)}
           />
         ))}
       </ScrollView>
-      <IconButton icon={Undo2} label="Undo" disabled={!canUndo} onPress={() => onAction('undo')} />
-      <IconButton icon={Redo2} label="Redo" disabled={!canRedo} onPress={() => onAction('redo')} />
+      <IconButton
+        icon={Undo2}
+        label="Undo"
+        width={38}
+        disabled={!canUndo}
+        onPress={() => onAction('undo')}
+      />
+      <IconButton
+        icon={Redo2}
+        label="Redo"
+        width={38}
+        disabled={!canRedo}
+        onPress={() => onAction('redo')}
+      />
     </View>
   );
 }

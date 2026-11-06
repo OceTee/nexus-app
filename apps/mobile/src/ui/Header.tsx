@@ -13,6 +13,7 @@ export function IconButton({
   colour,
   disabled = false,
   size = 22,
+  width = 44,
 }: {
   icon: LucideIcon;
   label: string;
@@ -20,6 +21,8 @@ export function IconButton({
   colour?: string;
   disabled?: boolean;
   size?: number;
+  /** Narrower buttons for dense toolbars; height stays 44 for touch. */
+  width?: number;
 }) {
   const t = useTheme();
   return (
@@ -32,6 +35,7 @@ export function IconButton({
       hitSlop={4}
       style={({ pressed }) => [
         styles.icon,
+        { width },
         pressed && { backgroundColor: t.colors.surfacePressed },
         disabled && styles.disabled,
       ]}
