@@ -367,6 +367,7 @@ export default function NoteEditor() {
         >
           <TextInput
             accessibilityLabel="Title"
+            testID="note-title"
             value={title}
             editable={!failed}
             onChangeText={(v) => {
@@ -452,6 +453,7 @@ export default function NoteEditor() {
           <>
             <TextInput
               accessibilityLabel="Note body"
+              testID="note-body"
               multiline
               value={body}
               editable={!failed}

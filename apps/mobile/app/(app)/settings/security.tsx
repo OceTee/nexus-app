@@ -79,6 +79,7 @@ export default function Security() {
             right={
               <Switch
                 accessibilityLabel="App lock"
+                testID="app-lock-switch"
                 value={settings.lockEnabled}
                 disabled={!lockAvailable}
                 onValueChange={(v) => void toggleLock(v)}

@@ -1,0 +1,8 @@
+# Maestro suite for NEXUS (TDD Section L, End-to-end testing). Run from
+# apps/mobile:   maestro test .maestro
+# Needs: the debug build installed, Metro running, and for signed-in flows the
+# local API on :4000 with E2E_MODE=true, reachable from the device (adb reverse).
+flows:
+  - 'flows/*'
+executionOrder:
+  continueOnFailure: true

@@ -1,0 +1,39 @@
+# T-51 Attachment flow: attach a photo and see it uploaded to the server.
+# The system photo picker differs between Android builds; the tap on the first
+# photo uses Google's picker ids and may need adjusting on other skins.
+appId: com.gladprosper.nexus.development
+name: T-51 Attachment flow
+tags: [api]
+---
+- addMedia:
+    - '../assets/test-photo.png'
+- runFlow: ../subflows/sign-in-fresh.yaml
+- runFlow:
+    file: ../subflows/new-note.yaml
+    env:
+      TITLE: 'Photo note'
+      BODY: 'With a picture.'
+- runFlow:
+    file: ../subflows/open-note.yaml
+    env:
+      TITLE: 'Photo note'
+- tapOn:
+    id: 'note-body'
+- tapOn: 'Attach a file'
+- tapOn: 'Photo library'
+- tapOn:
+    id: 'com.google.android.providers.media.module:id/icon_thumbnail'
+    index: 0
+- extendedWaitUntil:
+    visible: 'Attached .*'
+    timeout: 30000
+- extendedWaitUntil:
+    visible: 'Synced'
+    timeout: 60000
+- runScript:
+    file: ../scripts/second-device.js
+    env:
+      EMAIL: ${output.email}
+      PASSWORD: ${output.password}
+      ACTION: uploaded
+      TITLE: 'Photo note'

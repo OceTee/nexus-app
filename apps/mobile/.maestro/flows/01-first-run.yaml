@@ -1,0 +1,18 @@
+# T-47 First run and capture: continue offline, write a note, relaunch.
+appId: com.gladprosper.nexus.development
+name: T-47 First run and capture
+tags: [offline, smoke]
+---
+- runFlow: ../subflows/start-offline.yaml
+- assertVisible: 'Saved on this device'
+- runFlow:
+    file: ../subflows/new-note.yaml
+    env:
+      TITLE: 'First thought'
+      BODY: 'Written offline on the first run.'
+- stopApp
+- launchApp
+- extendedWaitUntil:
+    visible: 'First thought'
+    timeout: 60000
+- assertVisible: 'Saved on this device'

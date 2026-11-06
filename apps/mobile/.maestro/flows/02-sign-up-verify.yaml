@@ -1,0 +1,40 @@
+# T-48 Sign up and verify: create an account in the app, open the emailed
+# verification link, and see the first sync succeed.
+appId: com.gladprosper.nexus.development
+name: T-48 Sign up and verify
+tags: [api, smoke]
+---
+# The runner (run.mjs) clears app data before each flow.
+- launchApp
+- extendedWaitUntil:
+    visible: 'Create account'
+    timeout: 60000
+- tapOn: 'Create account'
+- evalScript: ${output.email = 'e2e-signup-' + Date.now() + '@example.com'}
+- tapOn:
+    id: 'sign-up-email'
+- inputText: ${output.email}
+- tapOn:
+    id: 'sign-up-password'
+- inputText: 'Maestro-Flow-Passphrase-42'
+- tapOn:
+    id: 'sign-up-confirm'
+- inputText: 'Maestro-Flow-Passphrase-42'
+- hideKeyboard
+- tapOn:
+    id: 'sign-up-submit'
+- extendedWaitUntil:
+    visible: 'Confirm your email'
+    timeout: 30000
+- runScript:
+    file: ../scripts/verify-link.js
+    env:
+      EMAIL: ${output.email}
+- openLink: ${output.verifyLink}
+- extendedWaitUntil:
+    visible: 'Email confirmed'
+    timeout: 30000
+- tapOn: 'Continue'
+- extendedWaitUntil:
+    visible: 'Synced'
+    timeout: 60000

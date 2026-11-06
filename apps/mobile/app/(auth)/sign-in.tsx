@@ -39,6 +39,7 @@ export default function SignIn() {
       <ControlledTextField
         control={control}
         name="email"
+        testID="sign-in-email"
         label="Email"
         keyboardType="email-address"
         autoCapitalize="none"
@@ -49,6 +50,7 @@ export default function SignIn() {
       <ControlledTextField
         control={control}
         name="password"
+        testID="sign-in-password"
         label="Password"
         secureTextEntry
         autoComplete="current-password"
@@ -66,7 +68,12 @@ export default function SignIn() {
           {formError}
         </Text>
       ) : null}
-      <Button label="Sign in" loading={isSubmitting} onPress={() => void submit()} />
+      <Button
+        testID="sign-in-submit"
+        label="Sign in"
+        loading={isSubmitting}
+        onPress={() => void submit()}
+      />
       <View style={styles.links}>
         <Button
           label="Forgot password?"

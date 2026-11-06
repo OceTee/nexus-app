@@ -1,0 +1,13 @@
+# Creates a note from the Notes tab. Params: TITLE, BODY.
+appId: com.gladprosper.nexus.development
+---
+- tapOn: 'New note'
+- tapOn:
+    id: 'note-title'
+- inputText: ${TITLE}
+- tapOn:
+    id: 'note-body'
+- inputText: ${BODY}
+- hideKeyboard
+- tapOn: 'Back'
+- assertVisible: ${TITLE}

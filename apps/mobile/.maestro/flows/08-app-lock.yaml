@@ -1,0 +1,25 @@
+# T-54 Biometric lock. Turning the lock on and unlocking both need a real
+# fingerprint or face (or `adb -e emu finger touch 1` on an emulator), so the
+# flow waits at each prompt; run it with someone at the device.
+appId: com.gladprosper.nexus.development
+name: T-54 Biometric lock
+tags: [manual]
+---
+- runFlow: ../subflows/start-offline.yaml
+- tapOn: 'Settings'
+- tapOn: 'Security, App lock'
+- tapOn:
+    id: 'app-lock-switch'
+- extendedWaitUntil:
+    visible: 'App lock on'
+    timeout: 60000
+- tapOn: 'Immediately'
+- pressKey: Home
+- launchApp
+- extendedWaitUntil:
+    visible: 'NEXUS is locked'
+    timeout: 60000
+- extendedWaitUntil:
+    notVisible: 'NEXUS is locked'
+    timeout: 60000
+- assertVisible: 'Security'

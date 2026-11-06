@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto';
+import { LogSender } from './integrations/email';
 import express, { Router, type Express, type Request, type RequestHandler } from 'express';
 import type { Logger } from 'pino';
 import { pinoHttp } from 'pino-http';
@@ -100,6 +101,22 @@ export function createApp({ env, logger, db, container }: AppDeps): Express {
       rateLimit(limiters.general, byIp),
       authRouter(container.auth, limiters, authed),
     );
+
+    // E2E runs only (refused in production by the env schema).
+    if (env.E2E_MODE && container.email instanceof LogSender) {
+      const sender = container.email;
+      app.get('/v1/dev/emails/last', (req, res) => {
+        const to = typeof req.query.to === 'string' ? req.query.to : '';
+        const mail = sender.last(to);
+        if (!mail) {
+          res
+            .status(404)
+            .json({ error: { code: 'NOT_FOUND', message: 'No email', requestId: req.id } });
+          return;
+        }
+        res.json(mail);
+      });
+    }
 
     const protectedRoutes = Router();
     protectedRoutes.use(authed, general);

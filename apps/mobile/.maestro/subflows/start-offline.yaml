@@ -1,0 +1,10 @@
+# Fresh install, then "Continue offline" (no account, nothing syncs).
+appId: com.gladprosper.nexus.development
+---
+# The runner (run.mjs) clears app data before each flow.
+- launchApp
+- extendedWaitUntil:
+    visible: 'Continue offline'
+    timeout: 60000
+- tapOn: 'Continue offline'
+- assertVisible: 'Notes'

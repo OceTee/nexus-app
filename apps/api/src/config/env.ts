@@ -59,8 +59,21 @@ const EnvSchema = z
       .transform((v) => v === 'true' || v === '1'),
     /** Change-feed hold-back for late commits (risk R-02). */
     SYNC_VISIBILITY_LAG_MS: z.coerce.number().int().min(0).max(60_000).default(2000),
+    /**
+     * End-to-end test runs only (Maestro): exposes the last email sent to an
+     * address at GET /v1/dev/emails/last (log sender only) and lifts the auth
+     * burst limit so a suite can create accounts. Refused in production.
+     */
+    E2E_MODE: z
+      .enum(['true', 'false', '1', '0'])
+      .default('false')
+      .transform((v) => v === 'true' || v === '1'),
     /** `postgres` in deployed environments; `memory` for local experiments and tests. */
     RATE_LIMIT_STORE: z.enum(['postgres', 'memory']).default('postgres'),
+  })
+  .refine((e) => e.NODE_ENV !== 'production' || !e.E2E_MODE, {
+    message: 'E2E_MODE must not be enabled in production',
+    path: ['E2E_MODE'],
   })
   .refine((e) => e.NODE_ENV !== 'production' || e.DATABASE_URL !== undefined, {
     message: 'DATABASE_URL is required in production',

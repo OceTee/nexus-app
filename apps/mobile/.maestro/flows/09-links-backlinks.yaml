@@ -1,0 +1,29 @@
+# Wiki-links: [[ autocomplete creates a ghost link, tapping it creates the
+# note, and the backlink appears on the target.
+appId: com.gladprosper.nexus.development
+name: Links and backlinks
+tags: [offline]
+---
+- runFlow: ../subflows/start-offline.yaml
+- tapOn: 'New note'
+- tapOn:
+    id: 'note-title'
+- inputText: 'Kalman filters'
+- tapOn:
+    id: 'note-body'
+- inputText: 'Estimates state. See [[Sensor fusion'
+- tapOn: 'Create “Sensor fusion”'
+- hideKeyboard
+- tapOn: 'Preview'
+- tapOn: 'Sensor fusion'
+- tapOn: 'Create note'
+- assertVisible: 'Sensor fusion'
+- tapOn:
+    id: 'note-body'
+- inputText: 'Combines sensors, for example [[Kalman filters]].'
+- hideKeyboard
+- assertVisible: '1 note links here ›'
+- tapOn: 'Back'
+- tapOn: 'Back'
+- assertVisible: 'Kalman filters'
+- assertVisible: 'Sensor fusion'

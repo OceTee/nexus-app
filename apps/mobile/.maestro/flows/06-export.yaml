@@ -1,0 +1,20 @@
+# T-52 Export: Settings → Export → Markdown opens the share sheet with the zip.
+appId: com.gladprosper.nexus.development
+name: T-52 Export
+tags: [offline]
+---
+- runFlow: ../subflows/start-offline.yaml
+- runFlow:
+    file: ../subflows/new-note.yaml
+    env:
+      TITLE: 'Exported note'
+      BODY: 'Goes into the bundle.'
+- tapOn: 'Settings'
+- tapOn: 'Export, Markdown bundle or JSON'
+- assertVisible: '1 note.*'
+- tapOn: 'Export'
+- extendedWaitUntil:
+    visible: 'nexus-markdown-.*\.zip'
+    timeout: 30000
+- back
+- assertVisible: 'Export ready'

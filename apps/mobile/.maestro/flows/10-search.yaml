@@ -1,0 +1,19 @@
+# Full-text search finds a note by a word in its body, offline.
+appId: com.gladprosper.nexus.development
+name: Search
+tags: [offline]
+---
+- runFlow: ../subflows/start-offline.yaml
+- runFlow:
+    file: ../subflows/new-note.yaml
+    env:
+      TITLE: 'Garden plan'
+      BODY: 'Plant the zucchini after the frost.'
+- tapOn: 'Search'
+- tapOn:
+    id: 'search-input'
+- inputText: 'zucchini'
+- hideKeyboard
+- assertVisible: 'Garden plan'
+- tapOn: 'Garden plan'
+- assertVisible: 'Garden plan'

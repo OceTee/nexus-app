@@ -54,6 +54,7 @@ export default function NoteTags() {
       <View style={styles.search}>
         <TextField
           label="Find or create a tag"
+          testID="tag-query"
           value={query}
           onChangeText={setQuery}
           autoCapitalize="none"

@@ -1,0 +1,38 @@
+# T-49 Airplane-mode edit and sync. Emulator only: airplane mode also cuts
+# wireless adb, so this cannot drive a phone connected over Wi-Fi.
+appId: com.gladprosper.nexus.development
+name: T-49 Airplane-mode edit and sync
+tags: [api, emulator-only]
+---
+- runFlow: ../subflows/sign-in-fresh.yaml
+- runFlow:
+    file: ../subflows/new-note.yaml
+    env:
+      TITLE: 'Field notes'
+      BODY: 'Base text.'
+- extendedWaitUntil:
+    visible: 'Synced'
+    timeout: 60000
+- setAirplaneMode: enabled
+- runFlow:
+    file: ../subflows/open-note.yaml
+    env:
+      TITLE: 'Field notes'
+- tapOn:
+    id: 'note-body'
+- inputText: ' Written in airplane mode.'
+- hideKeyboard
+- tapOn: 'Back'
+- assertVisible: 'Saved on this device'
+- setAirplaneMode: disabled
+- extendedWaitUntil:
+    visible: 'Synced'
+    timeout: 90000
+- runScript:
+    file: ../scripts/second-device.js
+    env:
+      EMAIL: ${output.email}
+      PASSWORD: ${output.password}
+      ACTION: expect
+      TITLE: 'Field notes'
+      EXPECT: 'Written in airplane mode.'

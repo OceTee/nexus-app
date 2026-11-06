@@ -1,0 +1,23 @@
+# Trash: delete a note, find it in Trash, restore it.
+appId: com.gladprosper.nexus.development
+name: Trash and restore
+tags: [offline]
+---
+- runFlow: ../subflows/start-offline.yaml
+- runFlow:
+    file: ../subflows/new-note.yaml
+    env:
+      TITLE: 'Old idea'
+      BODY: 'Maybe not.'
+- longPressOn: 'Old idea'
+- tapOn: 'Delete'
+- assertVisible: '“Old idea” moved to Trash'
+- assertNotVisible: 'Old idea'
+- tapOn: 'Settings'
+- tapOn: 'Trash'
+- assertVisible: 'Old idea'
+- tapOn: 'Restore Old idea'
+- assertVisible: 'Restored “Old idea”'
+- tapOn: 'Back'
+- tapOn: 'Notes'
+- assertVisible: 'Old idea'

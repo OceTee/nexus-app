@@ -148,6 +148,7 @@ export default function Search() {
           <SearchIcon size={18} color={t.colors.inkSoft} />
           <TextInput
             accessibilityLabel="Search notes"
+            testID="search-input"
             value={query}
             onChangeText={setQuery}
             autoFocus

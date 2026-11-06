@@ -57,6 +57,7 @@ export function SignUpForm({
       <ControlledTextField
         control={control}
         name="email"
+        testID="sign-up-email"
         label="Email"
         keyboardType="email-address"
         autoCapitalize="none"
@@ -67,6 +68,7 @@ export function SignUpForm({
       <ControlledTextField
         control={control}
         name="password"
+        testID="sign-up-password"
         label="Password"
         secureTextEntry
         autoComplete="new-password"
@@ -77,6 +79,7 @@ export function SignUpForm({
       <ControlledTextField
         control={control}
         name="confirm"
+        testID="sign-up-confirm"
         label="Confirm password"
         secureTextEntry
         autoComplete="new-password"

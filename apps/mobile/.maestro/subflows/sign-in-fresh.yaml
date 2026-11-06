@@ -1,0 +1,23 @@
+# Fresh install signed in to a brand-new, verified account
+# (output.email / output.password are set for later steps).
+appId: com.gladprosper.nexus.development
+---
+- runScript: ../scripts/new-account.js
+# The runner (run.mjs) clears app data before each flow.
+- launchApp
+- extendedWaitUntil:
+    visible: 'Sign in'
+    timeout: 60000
+- tapOn: 'Sign in'
+- tapOn:
+    id: 'sign-in-email'
+- inputText: ${output.email}
+- tapOn:
+    id: 'sign-in-password'
+- inputText: ${output.password}
+- hideKeyboard
+- tapOn:
+    id: 'sign-in-submit'
+- extendedWaitUntil:
+    visible: 'Notes'
+    timeout: 30000

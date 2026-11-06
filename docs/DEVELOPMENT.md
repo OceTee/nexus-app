@@ -131,3 +131,22 @@ With `ROLE=all` (the default) the API process also runs the job workers and regi
 - New native modules since Phase 7 (Skia, image picker, document picker, file system, notifications,
   task manager, sharing, image manipulator) need a fresh native build: run `npx expo prebuild` and rebuild
   the APK before running on a device.
+
+## End-to-end tests (Maestro)
+
+Flows live in `apps/mobile/.maestro` (one per scenario T-47…T-54, plus links, search, collections
+and tags, and Trash). Run them against the debug build with Metro running:
+
+```bash
+# API with E2E_MODE=true in apps/api/.env (never in staging or production)
+cd apps/mobile && node .maestro/run.mjs --device <adb serial> [--only 01,04]
+```
+
+- The runner clears app data with `adb shell pm clear` before each flow and passes
+  `--no-reinstall-driver`, so install Maestro's driver once
+  (`maestro-app.apk` and `maestro-server.apk` from `maestro-client.jar`).
+- `emulator-only` flows (T-49, airplane mode) cut wireless adb, and `manual` flows (T-54) need a
+  fingerprint; both are skipped unless passed with `--include`.
+- **TECNO / XOS phones:** the system app freezer ("Hiber") freezes the Maestro driver while it runs
+  in the background, so flows stall with `DeviceServerDied`. Battery "no restrictions" did not stop
+  it on the KM6. Use another device, an emulator or CI.

@@ -1,0 +1,5 @@
+# Opens the note titled TITLE from the Notes tab, in Edit mode.
+appId: com.gladprosper.nexus.development
+---
+- tapOn: ${TITLE}
+- tapOn: 'Edit'

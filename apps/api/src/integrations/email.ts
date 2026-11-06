@@ -37,11 +37,22 @@ export class ResendSender implements EmailSender {
 
 /** Development sender: logs the subject and any link instead of sending. */
 export class LogSender implements EmailSender {
+  /** The most recent messages, for the development outbox route (E2E flows). */
+  private readonly recent: { to: string; subject: string; link: string | undefined }[] = [];
+
   constructor(private readonly logger: Logger) {}
 
   async send(email: OutgoingEmail): Promise<void> {
     const link = /https?:\/\/\S+/.exec(email.text)?.[0];
+    this.recent.push({ to: email.to.toLowerCase(), subject: email.subject, link });
+    if (this.recent.length > 50) this.recent.shift();
     this.logger.info({ subject: email.subject, link }, 'email (not sent: RESEND_API_KEY unset)');
+  }
+
+  /** The last message sent to `to`, if any. */
+  last(to: string): { subject: string; link: string | undefined } | undefined {
+    const m = [...this.recent].reverse().find((r) => r.to === to.toLowerCase());
+    return m ? { subject: m.subject, link: m.link } : undefined;
   }
 }
 

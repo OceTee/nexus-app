@@ -64,6 +64,7 @@ export interface Container {
   attachments: AttachmentsService;
   exports: ExportsService;
   storage: Storage;
+  email: EmailSender;
 }
 
 export function createContainer(deps: ContainerDeps): Container {
@@ -81,7 +82,10 @@ export function createContainer(deps: ContainerDeps): Container {
       : undefined,
   );
 
-  const limiters = createLimiters(deps.limiterStore ?? { kind: env.RATE_LIMIT_STORE, pool });
+  const limiters = createLimiters(
+    deps.limiterStore ?? { kind: env.RATE_LIMIT_STORE, pool },
+    env.E2E_MODE,
+  );
   const email =
     deps.email ??
     (env.RESEND_API_KEY
@@ -116,6 +120,7 @@ export function createContainer(deps: ContainerDeps): Container {
     signer,
     limiters,
     queue,
+    email,
     jobHandlers: undefined as unknown as JobHandlers,
     auth: new AuthService({
       db,

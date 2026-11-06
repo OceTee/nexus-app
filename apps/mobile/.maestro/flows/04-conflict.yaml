@@ -1,0 +1,59 @@
+# T-50 Two-device conflict: this device edits while device B (the API) edits
+# the same revision; the banner appears, Merge keeps both, the server agrees.
+appId: com.gladprosper.nexus.development
+name: T-50 Two-device conflict
+tags: [api]
+---
+- runFlow: ../subflows/sign-in-fresh.yaml
+- runFlow:
+    file: ../subflows/new-note.yaml
+    env:
+      TITLE: 'Shared plan'
+      BODY: 'Base text.'
+- extendedWaitUntil:
+    visible: 'Synced'
+    timeout: 60000
+- runFlow:
+    file: ../subflows/open-note.yaml
+    env:
+      TITLE: 'Shared plan'
+- tapOn:
+    id: 'note-body'
+- inputText: ' Edit from this phone.'
+# Device B edits before this device's change is pushed (5 s debounce).
+- runScript:
+    file: ../scripts/second-device.js
+    env:
+      EMAIL: ${output.email}
+      PASSWORD: ${output.password}
+      ACTION: edit
+      TITLE: 'Shared plan'
+      EDIT_TEXT: 'Edit from device B.'
+- hideKeyboard
+- extendedWaitUntil:
+    visible: 'Resolve'
+    timeout: 60000
+- tapOn: 'Resolve'
+- assertVisible: 'ON SERVER'
+- assertVisible: 'THIS DEVICE'
+- tapOn: 'Merge'
+- tapOn: 'Save merged note'
+- extendedWaitUntil:
+    notVisible: 'Resolve'
+    timeout: 30000
+- runScript:
+    file: ../scripts/second-device.js
+    env:
+      EMAIL: ${output.email}
+      PASSWORD: ${output.password}
+      ACTION: expect
+      TITLE: 'Shared plan'
+      EXPECT: 'Edit from this phone.'
+- runScript:
+    file: ../scripts/second-device.js
+    env:
+      EMAIL: ${output.email}
+      PASSWORD: ${output.password}
+      ACTION: expect
+      TITLE: 'Shared plan'
+      EXPECT: 'Edit from device B.'

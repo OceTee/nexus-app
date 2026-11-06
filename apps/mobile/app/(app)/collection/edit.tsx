@@ -44,6 +44,7 @@ export default function CollectionEditor() {
       <View style={styles.pad}>
         <TextField
           label="Name"
+          testID="collection-name"
           value={name}
           onChangeText={(v) => {
             setName(v);

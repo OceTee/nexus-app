@@ -1,0 +1,31 @@
+# Collections and tags: create a collection, move a note into it, tag it.
+appId: com.gladprosper.nexus.development
+name: Collections and tags
+tags: [offline]
+---
+- runFlow: ../subflows/start-offline.yaml
+- runFlow:
+    file: ../subflows/new-note.yaml
+    env:
+      TITLE: 'Quarterly review'
+      BODY: 'Numbers and next steps.'
+- tapOn: 'Collections'
+- tapOn: 'New collection'
+- inputText: 'Work'
+- pressKey: Enter
+- assertVisible: 'Work'
+- tapOn: 'Notes'
+- longPressOn: 'Quarterly review'
+- tapOn: 'Move to collection'
+- tapOn: 'Work'
+- assertVisible: 'Moved to “Work”'
+- longPressOn: 'Quarterly review'
+- tapOn: 'Tags'
+- tapOn:
+    id: 'tag-query'
+- inputText: 'planning'
+- tapOn: 'Create “planning”'
+- hideKeyboard
+- tapOn: 'Back'
+- assertVisible: 'planning'
+- assertVisible: 'Work'

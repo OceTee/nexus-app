@@ -1,0 +1,28 @@
+# T-53 Device revoke: device B removes this phone; its next sync is refused,
+# the notes stay usable and the pill asks to sign in again.
+appId: com.gladprosper.nexus.development
+name: T-53 Device revoke
+tags: [api]
+---
+- runFlow: ../subflows/sign-in-fresh.yaml
+- runFlow:
+    file: ../subflows/new-note.yaml
+    env:
+      TITLE: 'Kept locally'
+      BODY: 'Still here after the revoke.'
+- extendedWaitUntil:
+    visible: 'Synced'
+    timeout: 60000
+- runScript:
+    file: ../scripts/second-device.js
+    env:
+      EMAIL: ${output.email}
+      PASSWORD: ${output.password}
+      ACTION: revoke
+- tapOn: 'Sync status: Synced'
+- tapOn: 'Sync now'
+- tapOn: 'Back'
+- extendedWaitUntil:
+    visible: 'Sign in to sync'
+    timeout: 30000
+- assertVisible: 'Kept locally'
