@@ -5,23 +5,13 @@
 import {
   normaliseTitle,
   parseWikiLinks,
+  sentenceAround,
   type BacklinkDto,
   type OutgoingLinkDto,
 } from '@nexus/shared';
 import { and, eq, inArray, isNull, sql } from 'drizzle-orm';
 import { noteLinks, notes } from '../../db/schema';
 import type { Tx } from '../../db/withUser';
-
-/** The sentence around `index` (for backlink context), trimmed to 240 characters. */
-export function sentenceAround(body: string, index: number): string {
-  const before = body.slice(0, index);
-  const after = body.slice(index);
-  const start = Math.max(before.lastIndexOf('\n'), before.search(/[.!?]\s[^.!?]*$/) + 1, 0);
-  const endMatch = /[.!?](\s|$)|\n/.exec(after);
-  const end = index + (endMatch ? endMatch.index + 1 : after.length);
-  const sentence = body.slice(start, end).replace(/\s+/g, ' ').trim();
-  return sentence.length > 240 ? `${sentence.slice(0, 239)}…` : sentence;
-}
 
 export class LinksService {
   /** Replaces a note's outgoing links with those in `bodyMd`. */

@@ -5,6 +5,7 @@ import {
   findCodeRanges,
   normaliseTitle,
   parseWikiLinks,
+  sentenceAround,
   stripMarkdown,
   uniqueLinkTargets,
   WIKI_LINK_MAX_TITLE,
@@ -171,5 +172,18 @@ describe('wordCount and excerpt', () => {
   it('cuts mid-word when there is no reasonable word boundary', () => {
     const ex = excerpt('x'.repeat(500), 20);
     expect(ex).toBe(`${'x'.repeat(19)}…`);
+  });
+});
+
+describe('sentenceAround', () => {
+  it('returns the whole sentence containing the index', () => {
+    const body = 'Intro here. A depends on [[B]] for state. Next one.';
+    expect(sentenceAround(body, body.indexOf('[['))).toBe('A depends on [[B]] for state.');
+  });
+
+  it('handles the first sentence, line breaks and long text', () => {
+    expect(sentenceAround('Builds on [[X]] today.', 10)).toBe('Builds on [[X]] today.');
+    expect(sentenceAround('# Title\nSee [[X]]\nmore', 12)).toBe('See [[X]]');
+    expect(sentenceAround(`${'word '.repeat(80)}[[X]]`, 400, 20)).toHaveLength(20);
   });
 });
