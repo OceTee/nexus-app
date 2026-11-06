@@ -15,6 +15,7 @@ import { alpha, Text, useTheme } from '@/ui';
 export function SyncPill() {
   const t = useTheme();
   const status = useSessionStore((s) => s.status);
+  const expired = useSessionStore((s) => s.sessionExpired);
   const run = useSyncStore((s) => s.state);
   const online = useSyncStore((s) => s.online);
   const { data: pending = 0 } = useLocalQuery(['outbox'], () => repos.outbox.pendingCount(getDb()));
@@ -22,11 +23,16 @@ export function SyncPill() {
   let Icon = Check;
   let label = 'Synced';
   let colour = t.colors.primary;
-  let target: '/settings' | '/settings/sync' = '/settings/sync';
+  let target: '/settings' | '/settings/sync' | '/sign-in' = '/settings/sync';
 
-  if (status === 'local') {
+  if (status === 'local' && expired) {
+    Icon = AlertCircle;
+    label = 'Sign in to sync';
+    colour = t.colors.accent;
+    target = '/sign-in';
+  } else if (status === 'local') {
     Icon = HardDrive;
-    label = 'This device';
+    label = 'Saved on this device';
     colour = t.colors.inkSoft;
     target = '/settings';
   } else if (online === false || run.kind === 'offline') {

@@ -11,6 +11,7 @@ import {
 } from '@nexus/shared';
 import { ApiError, api } from '@/infra/apiClient';
 import { getDb } from '@/infra/db';
+import { secureStore } from '@/infra/secureStore';
 import { useSessionStore } from '@/stores/session';
 import { events, type Table } from '../events';
 import { repos } from '../repos';
@@ -116,6 +117,16 @@ async function handleFailure(e: unknown): Promise<SyncOutcome> {
   const db = getDb();
   const store = useSyncStore.getState();
   const err = e instanceof ApiError ? e : null;
+
+  if (err?.code === 'DEVICE_REVOKED') {
+    // Removed from another device (BR-12): keep everything queued for a new sign-in.
+    await repos.outbox.release(db, 'DEVICE_REVOKED');
+    await secureStore.clearRefreshToken();
+    useSessionStore.getState().expire();
+    store.set({ state: { kind: 'paused', why: 'signed-out' } });
+    events.emit('outbox');
+    return { kind: 'error', error: e };
+  }
 
   if (
     err &&

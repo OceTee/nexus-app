@@ -75,9 +75,10 @@ export async function refreshSession(): Promise<string | null> {
     return pair.accessToken;
   } catch (err) {
     if (err instanceof ApiError && err.status === 401) {
-      // Token expired, reused or revoked: local notes stay; sign in again to sync.
+      // Token expired, reused or revoked: local notes and queued changes stay;
+      // the app keeps working offline and asks to sign in again to sync.
       await secureStore.clearRefreshToken();
-      useSessionStore.getState().signedOut();
+      useSessionStore.getState().expire();
     }
     return null;
   }
