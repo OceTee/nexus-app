@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { Lock, LogIn, MailWarning, Tags, Trash2, User } from 'lucide-react-native';
+import { Lock, LogIn, MailWarning, RefreshCw, Tags, Trash2, User } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
 import { StyleSheet, Switch, View } from 'react-native';
 import { signOut } from '../../../../src/features/auth/authService';
@@ -44,6 +44,12 @@ export default function SettingsTab() {
               icon={User}
               title={user.displayName || user.email}
               subtitle={user.displayName ? user.email : undefined}
+            />
+            <ListRow
+              icon={RefreshCw}
+              title="Sync"
+              subtitle="Status, queued changes and errors"
+              onPress={() => router.push('/settings/sync')}
             />
             {!user.emailVerified ? (
               <ListRow

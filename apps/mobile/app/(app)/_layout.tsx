@@ -1,4 +1,5 @@
 import { Stack } from 'expo-router';
+import { useSyncTriggers } from '@/data/sync';
 import { LockGate } from '@/features/auth/LockGate';
 import { useTheme } from '@/ui';
 
@@ -8,6 +9,7 @@ export const unstable_settings = { anchor: '(tabs)' };
 const MODALS = [
   'note/[noteId]/backlinks',
   'note/[noteId]/tags',
+  'note/[noteId]/conflict',
   'collection/edit',
   'collection/picker',
   'tag/edit',
@@ -15,6 +17,7 @@ const MODALS = [
 
 export default function AppLayout() {
   const t = useTheme();
+  useSyncTriggers();
   return (
     <LockGate>
       <Stack

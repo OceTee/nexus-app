@@ -1,6 +1,7 @@
 // Small repositories: sync state, local versions, conflicts, attachments.
 
 import type { SqlDb } from '../../infra/sql';
+import { events } from '../events';
 import type { AttachmentRow, ConflictRow, LocalVersionRow } from '../rows';
 
 export class SyncStateRepo {
@@ -44,6 +45,13 @@ export class VersionsRepo {
       [noteId],
     );
   }
+
+  async get(id: string): Promise<LocalVersionRow | null> {
+    return this.db().getFirstAsync<LocalVersionRow>(
+      `SELECT * FROM note_versions_local WHERE id = ?`,
+      [id],
+    );
+  }
 }
 
 export class ConflictsRepo {
@@ -60,6 +68,10 @@ export class ConflictsRepo {
         );
   }
 
+  async get(id: string): Promise<ConflictRow | null> {
+    return this.db().getFirstAsync<ConflictRow>(`SELECT * FROM conflicts WHERE id = ?`, [id]);
+  }
+
   async add(tx: SqlDb, c: Omit<ConflictRow, 'resolved_at'>): Promise<void> {
     await tx.runAsync(
       `INSERT INTO conflicts (id, note_id, version_id, server_rev, device_name, created_at)
@@ -73,6 +85,7 @@ export class ConflictsRepo {
       new Date().toISOString(),
       id,
     ]);
+    events.emit('conflicts');
   }
 }
 

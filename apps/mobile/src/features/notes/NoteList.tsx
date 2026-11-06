@@ -14,10 +14,14 @@ export function NoteList({
   notes,
   header,
   empty,
+  refreshing,
+  onRefresh,
 }: {
   notes: Note[];
   header?: ReactElement;
   empty?: ReactElement;
+  refreshing?: boolean;
+  onRefresh?: () => void;
 }) {
   const decor = useNoteDecor();
   const actions = useNoteActions();
@@ -29,6 +33,7 @@ export function NoteList({
         ListHeaderComponent={header}
         ListEmptyComponent={empty}
         contentContainerStyle={{ paddingBottom: 96 }}
+        {...(onRefresh ? { refreshing: refreshing ?? false, onRefresh } : {})}
         renderItem={({ item }) => (
           <NoteRow
             note={item}

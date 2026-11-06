@@ -3,6 +3,8 @@ import { FileText } from 'lucide-react-native';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { repos } from '@/data/repos';
+import { runSync } from '@/data/sync';
+import { useSessionStore } from '@/stores/session';
 import { useLocalQuery } from '@/data/useLocalQuery';
 import { NoteList } from '@/features/notes/NoteList';
 import { SyncPill } from '@/features/sync/SyncPill';
@@ -21,6 +23,12 @@ const newNote = () => router.push('/note/new');
 /** S-08 Notes list: the default landing screen. */
 export default function NotesList() {
   const [segment, setSegment] = useState<Segment>('all');
+  const [refreshing, setRefreshing] = useState(false);
+  const authed = useSessionStore((s) => s.status === 'authed');
+  const refresh = () => {
+    setRefreshing(true);
+    void runSync('manual').finally(() => setRefreshing(false));
+  };
   const { data: notes, loading } = useLocalQuery(
     ['notes'],
     () =>
@@ -66,7 +74,11 @@ export default function NotesList() {
           ))}
         </View>
       ) : (
-        <NoteList notes={notes ?? []} empty={empty} />
+        <NoteList
+          notes={notes ?? []}
+          empty={empty}
+          {...(authed ? { refreshing, onRefresh: refresh } : {})}
+        />
       )}
       <Fab label="New note" onPress={newNote} />
     </Screen>

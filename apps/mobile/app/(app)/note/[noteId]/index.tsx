@@ -3,6 +3,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import {
   FileX2,
   FolderInput,
+  History,
   Info,
   MoreVertical,
   Pin,
@@ -26,7 +27,8 @@ import {
   wrap,
   type Edit,
 } from '@/features/editor/textOps';
-import { useAutosave } from '@/features/editor/useAutosave';
+import { noteStamp, useAutosave } from '@/features/editor/useAutosave';
+import { events } from '@/data/events';
 import { useHistory } from '@/features/editor/useHistory';
 import { WikiAutocomplete } from '@/features/editor/WikiAutocomplete';
 import { getDb } from '@/infra/db';
@@ -88,6 +90,7 @@ export default function NoteEditor() {
         return;
       }
       setNote(n);
+      autosave.markLoaded(noteStamp(n));
       setTitle(n.title);
       history.reset({
         text: n.bodyMd,
@@ -102,12 +105,33 @@ export default function NoteEditor() {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- load once per note
   }, [noteId]);
 
+  // Another device's edit arrived by sync (or a version was restored): show it
+  // unless this editor has unsaved typing, which then wins and syncs on top.
+  useEffect(
+    () =>
+      events.on(['notes'], () => {
+        void repos.notes.get(noteId).then((n) => {
+          if (!n || n.deletedAt || autosave.isBusy()) return;
+          if (noteStamp(n) === autosave.knownStamp()) return;
+          autosave.markLoaded(noteStamp(n));
+          setNote(n);
+          setTitle(n.title);
+          history.reset({
+            text: n.bodyMd,
+            selection: { start: n.bodyMd.length, end: n.bodyMd.length },
+          });
+        });
+      }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- history.reset and autosave helpers are stable
+    [noteId],
+  );
+
   // Live facts shown around the editor.
   const { data: live } = useLocalQuery(
     ['notes', 'note_links', 'note_tags', 'tags', 'conflicts'],
     async () => {
       const db = getDb();
-      const [current, tags, backlinks, resolved] = await Promise.all([
+      const [current, tags, backlinks, resolved, conflicts] = await Promise.all([
         repos.notes.get(noteId),
         repos.tags.forNote(noteId),
         db.getFirstAsync<{ n: number }>(
@@ -120,9 +144,11 @@ export default function NoteEditor() {
            WHERE source_note_id = ? AND target_note_id IS NOT NULL`,
           [noteId],
         ),
+        repos.conflicts.open(noteId),
       ]);
       return {
         current,
+        conflicts: conflicts.length,
         tags,
         backlinks: Number(backlinks?.n ?? 0),
         resolved: new Set(resolved.map((r) => r.t)),
@@ -318,6 +344,28 @@ export default function NoteEditor() {
           />
         </Header>
 
+        {live && live.conflicts > 0 ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityHint="Opens the conflict screen"
+            onPress={() =>
+              void autosave
+                .flush()
+                .then(() =>
+                  router.push({ pathname: '/note/[noteId]/conflict', params: { noteId } }),
+                )
+            }
+            style={[styles.banner, { backgroundColor: alpha(t.colors.accent, 0.18) }]}
+          >
+            <Text variant="callout" style={styles.flex}>
+              This note was also edited on another device. Your copy is kept.
+            </Text>
+            <Text variant="headline" style={{ color: t.colors.primary }}>
+              Resolve
+            </Text>
+          </Pressable>
+        ) : null}
+
         {failed ? (
           <View style={[styles.banner, { backgroundColor: t.colors.danger }]}>
             <Text variant="callout" style={{ color: '#FFFFFF' }}>
@@ -446,6 +494,16 @@ export default function NoteEditor() {
               void autosave
                 .flush()
                 .then(() => router.push({ pathname: '/note/[noteId]/info', params: { noteId } })),
+          },
+          {
+            label: 'History',
+            icon: History,
+            onPress: () =>
+              void autosave
+                .flush()
+                .then(() =>
+                  router.push({ pathname: '/note/[noteId]/versions', params: { noteId } }),
+                ),
           },
           {
             label: 'Delete',
