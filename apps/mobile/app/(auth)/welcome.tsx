@@ -1,5 +1,6 @@
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
+import { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { useSessionStore } from '../../src/stores/session';
 import { Button, Screen, Text } from '../../src/ui';
@@ -8,6 +9,13 @@ import { Button, Screen, Text } from '../../src/ui';
 export default function Welcome() {
   const status = useSessionStore((s) => s.status);
   const continueOffline = useSessionStore((s) => s.continueOffline);
+  const [leaving, setLeaving] = useState(false);
+
+  // Welcome stays reachable in local mode (to sign in later), so the route
+  // guards don't move people on: go to Notes once the (app) group is allowed.
+  useEffect(() => {
+    if (leaving && status === 'local') router.replace('/notes');
+  }, [leaving, status]);
 
   return (
     <Screen edges={['top', 'bottom', 'left', 'right']}>
@@ -35,7 +43,14 @@ export default function Welcome() {
             onPress={() => router.replace('/notes')}
           />
         ) : (
-          <Button label="Continue offline" variant="text" onPress={continueOffline} />
+          <Button
+            label="Continue offline"
+            variant="text"
+            onPress={() => {
+              setLeaving(true);
+              continueOffline();
+            }}
+          />
         )}
         <Text variant="footnote" tone="inkFaint" align="center">
           Your notes stay on this device. Syncing between devices needs an account.
