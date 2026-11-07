@@ -18,6 +18,7 @@ import { attachments, collections, notes, noteTags, noteVersions, tags } from '.
 import type { Tx } from '../../db/withUser';
 import type { ChangeFeed } from '../sync/changeFeed';
 import type { LinksService } from '../links/links.service';
+import { isUnstorableText } from '../../lib/errors';
 import { deriveNoteFields, iso } from './derive';
 
 export interface OpContext {
@@ -60,7 +61,12 @@ export class ContentEngine {
   async apply(tx: Tx, ctx: OpContext, op: SyncOp): Promise<ApplyOutcome> {
     try {
       return await tx.transaction((sp) => this.dispatch(sp as unknown as Tx, ctx, op));
-    } catch (err) {
+    } catch (caught) {
+      // Rejected alone: the savepoint is rolled back and the batch goes on, so
+      // one bad op can't block a device's outbox for good.
+      const err = isUnstorableText(caught)
+        ? new OpRejected('VALIDATION_FAILED', 'The text contains characters that cannot be stored')
+        : caught;
       if (err instanceof OpRejected) {
         return {
           result: {

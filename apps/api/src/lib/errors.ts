@@ -1,6 +1,16 @@
 // Error hierarchy from TDD Section F, Error handling. The error handler maps
 // these to `{ error: { code, message, details, requestId } }`.
 
+/**
+ * Postgres refuses some text that JSON and Zod accept, such as the NUL
+ * character (22021) or `\u0000` inside jsonb (22P05). Found by the ZAP scan.
+ */
+export function isUnstorableText(err: unknown): boolean {
+  const e = err as { code?: string; cause?: { code?: string } } | null;
+  const code = e?.code ?? e?.cause?.code;
+  return code === '22021' || code === '22P05';
+}
+
 export class AppError extends Error {
   constructor(
     public readonly status: number,

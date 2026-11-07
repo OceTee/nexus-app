@@ -28,6 +28,20 @@ beforeAll(() => {
 afterAll(() => closePools(pools));
 
 describe('/v1/me', () => {
+  // Found by the ZAP scan: Postgres refuses NUL in text, which used to be a 500.
+  it('rejects text Postgres cannot store with 400, not 500', async () => {
+    const t = await makeApp(pools);
+    const u = await registerUser(t);
+    expectError(
+      await t.http
+        .patch('/v1/me')
+        .set(bearer(u.accessToken))
+        .send({ displayName: 'Nul\u0000name' }),
+      400,
+      'VALIDATION_FAILED',
+    );
+  });
+
   it('returns and updates the profile, merging settings', async () => {
     const t = await makeApp(pools);
     const u = await registerUser(t);

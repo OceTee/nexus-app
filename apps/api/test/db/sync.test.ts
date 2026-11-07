@@ -238,6 +238,26 @@ describe('T-18 sync conflict', () => {
   });
 });
 
+describe('unstorable text in a batch', () => {
+  // One op with a NUL character is rejected on its own; the rest of the batch
+  // applies, so the device's outbox can't get stuck on it.
+  it('rejects only that op', async () => {
+    const t = await makeApp(pools);
+    const u = await verifiedUser(t);
+    const bad = noteUpsert(uuidv7(), 0, 'Broken\u0000text');
+    const good = noteUpsert(uuidv7(), 0, 'Fine text');
+    const res = await push(t, u, [bad, good]);
+    expect(res.results).toEqual([
+      expect.objectContaining({
+        opId: bad.opId,
+        status: 'rejected',
+        error: expect.objectContaining({ code: 'VALIDATION_FAILED' }),
+      }),
+      expect.objectContaining({ opId: good.opId, status: 'applied', serverRev: 1 }),
+    ]);
+  });
+});
+
 describe('T-19 idempotency and BR-03', () => {
   it('returns the stored receipt for a repeated opId', async () => {
     const t = await makeApp(pools);

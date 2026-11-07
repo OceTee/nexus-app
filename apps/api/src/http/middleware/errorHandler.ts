@@ -1,5 +1,11 @@
 import type { ErrorRequestHandler, RequestHandler } from 'express';
-import { AppError, LockedError, NotFoundError, RateLimitedError } from '../../lib/errors';
+import {
+  AppError,
+  isUnstorableText,
+  LockedError,
+  NotFoundError,
+  RateLimitedError,
+} from '../../lib/errors';
 
 export const notFound: RequestHandler = (_req, _res, next) => {
   next(new NotFoundError('Route'));
@@ -30,6 +36,16 @@ export const errorHandler: ErrorRequestHandler = (err, req, res, _next) => {
   if (isBodyParseError(err)) {
     res.status(400).json({
       error: { code: 'MALFORMED_JSON', message: 'Malformed JSON body', requestId: req.id },
+    });
+    return;
+  }
+  if (isUnstorableText(err)) {
+    res.status(400).json({
+      error: {
+        code: 'VALIDATION_FAILED',
+        message: 'The text contains characters that cannot be stored',
+        requestId: req.id,
+      },
     });
     return;
   }
