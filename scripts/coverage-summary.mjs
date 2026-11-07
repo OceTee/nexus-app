@@ -53,6 +53,6 @@ if (process.env.GITHUB_STEP_SUMMARY) appendFileSync(process.env.GITHUB_STEP_SUMM
 if (process.env.GITHUB_ACTIONS) {
   const lines = rows
     .map((r) => r.replace(/^\| | \|$/g, '').split(' | '))
-    .map((c) => `${c[0]} ${c[2]}`);
+    .map((c) => `${c[0]} ${c[2]} lines, ${c[3]} branches`);
   console.log(`::notice title=Coverage ${label}::${head}%0A${lines.join('%0A')}`);
 }

@@ -127,7 +127,10 @@ jobs:
       # the database tests, so coverage is measured across both.
       - name: Database and unit tests with coverage (PostgreSQL 18 via Testcontainers)
         working-directory: apps/api
-        run: pnpm exec vitest run --coverage --reporter=default --reporter=github-actions
+        # TDD Section L, Coverage targets: 80 % lines and 70 % branches overall.
+        run: >-
+          pnpm exec vitest run --coverage --reporter=default --reporter=github-actions
+          --coverage.thresholds.lines=80 --coverage.thresholds.branches=70
 
       - name: Coverage summary
         if: always()
