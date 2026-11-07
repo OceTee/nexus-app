@@ -10,6 +10,7 @@ paths = [
   '''(^|/)pnpm-lock\.yaml$''',
   # Test fixtures use fake signing secrets; real secrets live only in the platform secret store.
   '''(^|/)apps/api/test/''',
+  '''(^|/)apps/mobile/__tests__/''',
   # Build output and dependencies are never committed (only matters for local folder scans).
   '''(^|/)(dist|node_modules|coverage)/''',
 ]
