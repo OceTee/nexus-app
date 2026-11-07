@@ -99,6 +99,9 @@ function Block({ tok, ctx }: { tok: Token; ctx: Ctx }): ReactNode {
   const { t } = ctx;
   switch (tok.type) {
     case 'space':
+    // Task items get a Done / To do icon from the list; marked's own checkbox
+    // token would otherwise print "[x]" beside it.
+    case 'checkbox':
       return null;
     case 'heading': {
       const h = tok as Tokens.Heading;
@@ -233,6 +236,8 @@ function Inline({ tokens, ctx }: { tokens: Token[] | undefined; ctx: Ctx }): Rea
           <Fragment key={i}>{decode(tt.text)}</Fragment>
         );
       }
+      case 'checkbox':
+        return null;
       case 'escape':
         return <Fragment key={i}>{(tok as Tokens.Escape).text}</Fragment>;
       case 'strong':
