@@ -28,6 +28,12 @@ jobs:
     env:
       APP_ENV: development
       CI: 'true'
+      # Baked into the release bundle: E2E mode (cleartext to localhost, no
+      # LogBox) and the API reached through `adb reverse`.
+      EXPO_PUBLIC_E2E: '1'
+      EXPO_PUBLIC_API_URL: http://localhost:4000
+      # Slow CI emulators need longer than the 15 s default to start the driver.
+      MAESTRO_DRIVER_STARTUP_TIMEOUT: '120000'
     steps:
       - uses: actions/checkout@v4
 
@@ -70,23 +76,15 @@ jobs:
           for i in $(seq 1 60); do curl -sf localhost:4000/readyz && break; sleep 2; done
           curl -sf localhost:4000/readyz
 
-      # --- App: native debug build for the emulator (x86_64) and Metro -------
+      # --- App: a release build with the JS bundle embedded (no Metro, dev menu
+      # or LogBox), as Expo's E2E guide and Maestro recommend ------------------
       - name: Generate the Android project
         working-directory: apps/mobile
         run: npx expo prebuild --platform android --no-install
 
-      - name: Build the debug APK
+      - name: Build the release APK
         working-directory: apps/mobile/android
-        run: ./gradlew app:assembleDebug -PreactNativeArchitectures=x86_64 --console=plain
-
-      - name: Start Metro and pre-build the bundle
-        working-directory: apps/mobile
-        run: |
-          export EXPO_PUBLIC_E2E=1
-          nohup npx expo start --port 8081 > "$RUNNER_TEMP/metro.log" 2>&1 &
-          for i in $(seq 1 90); do curl -sf localhost:8081/status | grep -q running && break; sleep 2; done
-          curl -sf -o /dev/null --max-time 900 \
-            "http://localhost:8081/node_modules/expo-router/entry.bundle?platform=android&dev=true&minify=false"
+        run: ./gradlew app:assembleRelease -PreactNativeArchitectures=x86_64 --console=plain
 
       - name: Install Maestro
         run: |
@@ -107,6 +105,10 @@ jobs:
           target: google_apis
           arch: x86_64
           profile: pixel_6
+          cores: 4
+          ram-size: 4096M
+          heap-size: 576M
+          emulator-boot-timeout: 900
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -no-snapshot
           working-directory: apps/mobile
@@ -120,5 +122,4 @@ jobs:
           path: |
             ~/.maestro/tests
             ${{ runner.temp }}/api.log
-            ${{ runner.temp }}/metro.log
           retention-days: 14

@@ -27,6 +27,8 @@ tags: [api]
 - extendedWaitUntil:
     visible: 'Attached .*'
     timeout: 30000
+# The sync status pill lives on the notes list.
+- tapOn: 'Back'
 - extendedWaitUntil:
     visible: 'Synced'
     timeout: 60000

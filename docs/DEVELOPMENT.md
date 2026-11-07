@@ -145,7 +145,11 @@ cd apps/mobile && node .maestro/run.mjs --device <adb serial> [--only 01,04]
 - The runner clears app data with `adb shell pm clear` before each flow. `--keep-driver` skips
   Maestro's driver reinstall (install `maestro-app.apk` and `maestro-server.apk` from
   `maestro-client.jar` once), for phones that need the driver exempted from an app freezer.
-- CI runs the suite on an Android emulator: `.github/workflows/e2e.yml` (nightly and on demand).
+- CI runs the suite on an Android emulator: `.github/workflows/e2e.yml` (nightly, on demand, and
+  on pushes that touch the suite). It tests a release APK built with `EXPO_PUBLIC_E2E=1`, so the
+  JS bundle is embedded (no Metro, dev menu or LogBox) and `plugins/withE2ECleartext.js` allows
+  plain HTTP to the API and MinIO on localhost. Failures show up as run annotations, including
+  the text that was on screen, so the raw logs aren't needed.
 - `emulator-only` flows (T-49, airplane mode) cut wireless adb, and `manual` flows (T-54) need a
   fingerprint; both are skipped unless passed with `--include`.
 - **TECNO / XOS phones:** the system app freezer ("Hiber") freezes the Maestro driver while it runs

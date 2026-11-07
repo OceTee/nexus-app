@@ -82,6 +82,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       // Fonts are embedded at build time, so nothing loads at launch (cold start budget).
       ['expo-font', { fonts }],
       './plugins/withCmakeVersion',
+      './plugins/withE2ECleartext',
     ],
     experiments: { typedRoutes: true, reactCompiler: true },
     extra: { apiUrl: process.env.EXPO_PUBLIC_API_URL },
