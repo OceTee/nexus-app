@@ -1,12 +1,21 @@
 import { Tabs } from 'expo-router';
 import { FileText, Folder, Search, Settings, Share2, type LucideIcon } from 'lucide-react-native';
 import type { ColorValue } from 'react-native';
-import { useTheme } from '../../../src/ui';
+import { Text, useTheme } from '../../../src/ui';
 
 const icon = (Icon: LucideIcon) =>
   function TabIcon({ color, size }: { color: ColorValue; size: number }) {
     return <Icon color={color as string} size={size} />;
   };
+
+/** Tab labels grow with the font scale up to 1.3× and then truncate (TDD Section C). */
+function TabLabel({ color, children }: { color: ColorValue; children: string }) {
+  return (
+    <Text variant="caption" maxFontSizeMultiplier={1.3} numberOfLines={1} style={{ color }}>
+      {children}
+    </Text>
+  );
+}
 
 export const unstable_settings = { anchor: 'notes/index' };
 
@@ -20,7 +29,7 @@ export default function TabsLayout() {
         headerShown: false,
         tabBarActiveTintColor: t.colors.primary,
         tabBarInactiveTintColor: t.colors.inkSoft,
-        tabBarLabelStyle: t.type('caption'),
+        tabBarLabel: TabLabel,
         tabBarStyle: { backgroundColor: t.colors.surface, borderTopColor: t.colors.line },
         sceneStyle: { backgroundColor: t.colors.surface },
       }}

@@ -11,7 +11,7 @@ import {
   Undo2,
   type LucideIcon,
 } from 'lucide-react-native';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { IconButton, useTheme } from '@/ui';
 
 export type ToolbarAction =
@@ -39,22 +39,30 @@ export function EditorToolbar({
   canRedo: boolean;
 }) {
   const t = useTheme();
+  // Above 150 % text size every tool stays in view: the row wraps instead of
+  // scrolling sideways (TDD Section C, Dynamic type).
+  const wrap = useWindowDimensions().fontScale > 1.5;
+  const tools = ITEMS.map((i) => (
+    <IconButton
+      key={i.action}
+      icon={i.icon}
+      label={i.label}
+      width={38}
+      onPress={() => onAction(i.action)}
+    />
+  ));
   return (
     <View
       accessibilityRole="toolbar"
       style={[styles.bar, { backgroundColor: t.colors.surface2, borderTopColor: t.colors.line }]}
     >
-      <ScrollView horizontal keyboardShouldPersistTaps="always" style={styles.scroll}>
-        {ITEMS.map((i) => (
-          <IconButton
-            key={i.action}
-            icon={i.icon}
-            label={i.label}
-            width={38}
-            onPress={() => onAction(i.action)}
-          />
-        ))}
-      </ScrollView>
+      {wrap ? (
+        <View style={[styles.scroll, styles.wrap]}>{tools}</View>
+      ) : (
+        <ScrollView horizontal keyboardShouldPersistTaps="always" style={styles.scroll}>
+          {tools}
+        </ScrollView>
+      )}
       <IconButton
         icon={Undo2}
         label="Undo"
@@ -77,9 +85,10 @@ const styles = StyleSheet.create({
   bar: {
     flexDirection: 'row',
     alignItems: 'center',
-    height: 48,
+    minHeight: 48,
     borderTopWidth: StyleSheet.hairlineWidth,
     paddingHorizontal: 4,
   },
   scroll: { flex: 1 },
+  wrap: { flexDirection: 'row', flexWrap: 'wrap' },
 });

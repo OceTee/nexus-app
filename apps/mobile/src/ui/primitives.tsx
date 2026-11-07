@@ -62,7 +62,9 @@ export function Chip({
       ]}
     >
       <View style={[styles.dot, { backgroundColor: c }]} />
-      <Text variant="caption">{label}</Text>
+      <Text variant="caption" maxFontSizeMultiplier={1.3} numberOfLines={1}>
+        {label}
+      </Text>
     </Pressable>
   );
 }
@@ -148,7 +150,12 @@ export function SegmentedControl<T extends string>({
               },
             ]}
           >
-            <Text variant="caption" tone={selected ? 'ink' : 'inkSoft'}>
+            <Text
+              variant="caption"
+              tone={selected ? 'ink' : 'inkSoft'}
+              maxFontSizeMultiplier={1.3}
+              numberOfLines={1}
+            >
               {o.label}
             </Text>
           </Pressable>
@@ -305,7 +312,7 @@ export function Sheet({
 const styles = StyleSheet.create({
   card: { borderRadius: 14, padding: 16 },
   chip: {
-    height: 28,
+    minHeight: 28,
     borderRadius: 14,
     paddingHorizontal: 10,
     flexDirection: 'row',
@@ -330,7 +337,7 @@ const styles = StyleSheet.create({
     bottom: 0,
     height: StyleSheet.hairlineWidth * 2,
   },
-  segTrack: { height: 36, borderRadius: 10, flexDirection: 'row', padding: 2 },
+  segTrack: { minHeight: 36, borderRadius: 10, flexDirection: 'row', padding: 2 },
   segItem: { flex: 1, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
   fab: {
     position: 'absolute',

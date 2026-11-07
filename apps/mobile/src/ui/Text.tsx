@@ -15,7 +15,9 @@ export function Text({ variant = 'body', tone = 'ink', align, style, ...rest }: 
   return (
     <RNText
       {...rest}
-      maxFontSizeMultiplier={rest.maxFontSizeMultiplier ?? 1.6}
+      // NFR-09: text scales with the system setting up to 200 %. Fixed-height
+      // parts (chips, segmented controls, tab labels) pass 1.3 and truncate.
+      maxFontSizeMultiplier={rest.maxFontSizeMultiplier ?? 2}
       style={[
         t.type(variant),
         { color: t.colors[tone] },
