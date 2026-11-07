@@ -19,18 +19,32 @@ const OPS_PER_BATCH = Number(__ENV.OPS_PER_BATCH || 100);
 const PERIOD_S = Number(__ENV.PERIOD_S || 60);
 const PASSWORD = 'k6-Load-Test-Passphrase-42';
 
+const DEVICES = ACCOUNTS * DEVICES_PER_ACCOUNT;
+
 export const options = {
   setupTimeout: '5m',
   summaryTrendStats: ['avg', 'min', 'med', 'max', 'p(90)', 'p(95)', 'p(99)', 'count'],
   scenarios: {
+    // One device alone, back to back: the cost of a 100-op batch without contention.
+    baseline: {
+      executor: 'per-vu-iterations',
+      exec: 'baseline',
+      vus: 1,
+      iterations: 10,
+      maxDuration: '2m',
+    },
+    // The load itself. Devices start at random points in the first minute, as
+    // real devices do, instead of all syncing on the same second.
     devices: {
       executor: 'constant-vus',
-      vus: ACCOUNTS * DEVICES_PER_ACCOUNT,
+      startTime: __ENV.LOAD_START || '1m',
+      vus: DEVICES,
       duration: __ENV.DURATION || '5m',
     },
   },
   thresholds: {
     'http_req_duration{name:sync}': ['p(95)<800'],
+    'http_req_duration{name:sync_single}': ['p(95)<800'],
     'http_req_failed{name:sync}': ['rate==0'],
     checks: ['rate==1'],
   },
@@ -86,7 +100,8 @@ export function setup() {
     if (ver.status >= 300) fail(`verify ${ver.status}: ${ver.body}`);
 
     // Signed in after verification, so every token carries a verified account.
-    for (let d = 0; d < DEVICES_PER_ACCOUNT; d += 1) {
+    // The first account gets one more device, for the baseline scenario.
+    for (let d = 0; d < DEVICES_PER_ACCOUNT + (a === 0 ? 1 : 0); d += 1) {
       const dev = device(`k6 device ${d + 1}`);
       const login = post(
         '/v1/auth/login',
@@ -105,10 +120,7 @@ export function setup() {
 let cursor = 0;
 const notes = []; // { id, rev }
 
-export default function (data) {
-  const me = data.sessions[exec.vu.idInTest - 1];
-  const started = Date.now();
-
+function pushBatch(me, name) {
   // Half new notes, half edits of this device's own notes (once it has some).
   const ops = [];
   for (let i = 0; i < OPS_PER_BATCH; i += 1) {
@@ -138,7 +150,7 @@ export default function (data) {
     '/v1/sync',
     { deviceId: me.deviceId, cursor, ops: batch, clientSchema: 1 },
     me.accessToken,
-    'sync',
+    name,
   );
   const ok = check(res, {
     'sync 200': (r) => r.status === 200,
@@ -157,22 +169,38 @@ export default function (data) {
   } else if (!ok) {
     console.error(`sync ${res.status}: ${res.body}`);
   }
+}
 
+/** The baseline device: the extra session at the end of the list. */
+export function baseline(data) {
+  pushBatch(data.sessions[data.sessions.length - 1], 'sync_single');
+}
+
+export default function (data) {
+  // VU ids are unique across scenarios; the modulo maps them onto the 50 devices.
+  const me = data.sessions[(exec.vu.idInTest - 1) % DEVICES];
+  if (exec.vu.iterationInScenario === 0) sleep(Math.random() * PERIOD_S);
+  const started = Date.now();
+  pushBatch(me, 'sync');
   sleep(Math.max(0, PERIOD_S - (Date.now() - started) / 1000));
 }
 
 export function handleSummary(data) {
-  const d = data.metrics['http_req_duration{name:sync}'];
+  const line = (label, name) => {
+    const d = data.metrics[`http_req_duration{name:${name}}`];
+    if (!d) return `${label}: no data`;
+    const v = d.values;
+    return `${label}: ${v.count} requests; p95 ${v['p(95)'].toFixed(0)} ms, median ${v.med.toFixed(0)} ms, max ${v.max.toFixed(0)} ms`;
+  };
   const failed = data.metrics['http_req_failed{name:sync}'];
-  const line =
-    `sync requests: ${d ? (d.values.count ?? '') : 0}; ` +
-    `p95 ${d ? d.values['p(95)'].toFixed(0) : '?'} ms, ` +
-    `p99 ${d && d.values['p(99)'] !== undefined ? d.values['p(99)'].toFixed(0) : '?'} ms, ` +
-    `max ${d ? d.values.max.toFixed(0) : '?'} ms; ` +
-    `failed ${failed ? (failed.values.rate * 100).toFixed(2) : '?'} %`;
+  const text = [
+    line('One device alone (100-op batch)', 'sync_single'),
+    line(`${DEVICES} devices, 100 ops/min each`, 'sync'),
+    `Failed requests: ${failed ? (failed.values.rate * 100).toFixed(2) : '?'} %`,
+  ].join('\n');
   return {
-    stdout: `\n${line}\n`,
+    stdout: `\n${text}\n`,
     'k6-summary.json': JSON.stringify(data, null, 2),
-    'k6-summary.txt': `${line}\n`,
+    'k6-summary.txt': `${text}\n`,
   };
 }

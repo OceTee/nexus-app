@@ -127,7 +127,7 @@ jobs:
       # the database tests, so coverage is measured across both.
       - name: Database and unit tests with coverage (PostgreSQL 18 via Testcontainers)
         working-directory: apps/api
-        run: pnpm exec vitest run --coverage --coverage
+        run: pnpm exec vitest run --coverage --reporter=default --reporter=github-actions
 
       - name: Coverage summary
         if: always()

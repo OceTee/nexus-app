@@ -13,7 +13,7 @@ import {
   type SyncResponse,
   type SyncStatusDto,
 } from '@nexus/shared';
-import { and, eq, gt, isNull, or, sql } from 'drizzle-orm';
+import { and, eq, gt, inArray, isNull, or, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import type { Db } from '../../db/client';
 import {
@@ -69,27 +69,32 @@ export class SyncService {
       const results: OpResult[] = [];
       const conflicts: ConflictDto[] = [];
       let changed = false;
+      // Receipts are read and written once per batch, not once per op (NFR-05).
+      const stored = await this.receipts(
+        tx,
+        req.ops.map((o) => o.opId),
+      );
+      const fresh: (typeof opReceipts.$inferInsert)[] = [];
       for (const op of req.ops) {
-        const stored = await this.receipt(tx, op.opId);
-        if (stored) {
-          results.push(stored); // T-19: a repeated opId returns the stored result
+        const known = stored.get(op.opId);
+        if (known) {
+          results.push(known); // T-19: a repeated opId returns the stored result
           continue;
         }
         const outcome = await this.engine.apply(tx, ctx, op);
-        await tx
-          .insert(opReceipts)
-          .values({
-            opId: op.opId,
-            userId,
-            deviceId: req.deviceId,
-            status: outcome.result.status,
-            result: outcome.result,
-          })
-          .onConflictDoNothing();
+        stored.set(op.opId, outcome.result); // the same opId twice in one batch
+        fresh.push({
+          opId: op.opId,
+          userId,
+          deviceId: req.deviceId,
+          status: outcome.result.status,
+          result: outcome.result,
+        });
         results.push(outcome.result);
         if (outcome.conflict) conflicts.push(outcome.conflict);
         changed ||= outcome.changed;
       }
+      if (fresh.length > 0) await tx.insert(opReceipts).values(fresh).onConflictDoNothing();
 
       const page = await this.feed.read(tx, userId, req.deviceId, req.cursor);
       await tx
@@ -122,9 +127,14 @@ export class SyncService {
     if (!row || row.revokedAt !== null) throw new ForbiddenError('DEVICE_REVOKED');
   }
 
-  private async receipt(tx: Tx, opId: string): Promise<OpResult | null> {
-    const [row] = await tx.select().from(opReceipts).where(eq(opReceipts.opId, opId));
-    return row ? (row.result as OpResult) : null;
+  /** Stored results for the op ids that were already applied, by op id. */
+  private async receipts(tx: Tx, opIds: string[]): Promise<Map<string, OpResult>> {
+    if (opIds.length === 0) return new Map();
+    const rows = await tx
+      .select({ opId: opReceipts.opId, result: opReceipts.result })
+      .from(opReceipts)
+      .where(inArray(opReceipts.opId, opIds));
+    return new Map(rows.map((r) => [r.opId, r.result as OpResult]));
   }
 
   /**
