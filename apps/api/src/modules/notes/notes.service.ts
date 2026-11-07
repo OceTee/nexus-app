@@ -437,7 +437,10 @@ export class NotesService {
     });
   }
 
-  /** keep_server: discard the conflict copy; keep_mine / merged: write it as a new revision. */
+  /**
+   * keep_server: discard the conflict copy; keep_mine / merged: write it as a new
+   * revision. Resolves every open conflict on the note.
+   */
   async resolveConflict(
     userId: string,
     deviceId: string,
@@ -475,10 +478,18 @@ export class NotesService {
           ),
         );
       }
+      // The choice settles the note, so every open conflict copy of it is
+      // resolved, not only this one (stacked edits can leave several).
       await tx
         .update(noteVersions)
         .set({ resolvedAt: sql`now()` })
-        .where(eq(noteVersions.id, versionId));
+        .where(
+          and(
+            eq(noteVersions.noteId, noteId),
+            eq(noteVersions.conflict, true),
+            isNull(noteVersions.resolvedAt),
+          ),
+        );
       return (await loadNote(tx, noteId))!;
     });
   }

@@ -80,6 +80,15 @@ export class ConflictsRepo {
     );
   }
 
+  /** Resolves every open conflict on a note (a resolution settles the whole note). */
+  async resolveNote(noteId: string): Promise<void> {
+    await this.db().runAsync(
+      `UPDATE conflicts SET resolved_at = ? WHERE note_id = ? AND resolved_at IS NULL`,
+      [new Date().toISOString(), noteId],
+    );
+    events.emit('conflicts');
+  }
+
   async resolve(id: string): Promise<void> {
     await this.db().runAsync(`UPDATE conflicts SET resolved_at = ? WHERE id = ?`, [
       new Date().toISOString(),

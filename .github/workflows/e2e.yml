@@ -6,12 +6,16 @@ on:
   schedule:
     - cron: '30 2 * * *'
   workflow_dispatch:
-  # Also when the suite or this workflow changes.
+  # Also when the suite, this workflow, or the app or API code changes.
   push:
     branches: [main]
     paths:
       - '.github/workflows/e2e.yml'
       - 'apps/mobile/.maestro/**'
+      - 'apps/mobile/app/**'
+      - 'apps/mobile/src/**'
+      - 'apps/api/src/**'
+      - 'packages/shared/src/**'
 
 concurrency:
   group: e2e-${{ github.ref }}

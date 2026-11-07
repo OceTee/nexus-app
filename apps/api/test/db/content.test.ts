@@ -156,6 +156,33 @@ describe('notes REST', () => {
     expect(restored.body).toMatchObject({ bodyMd: 'first', serverRev: 3 });
   });
 
+  it('resolving one conflict settles every open conflict on the note', async () => {
+    const t = await makeApp(pools);
+    const u = await verifiedUser(t);
+    const note = await createNote(t, u, 'Stacked', 'base');
+    await t.http
+      .patch(`/v1/notes/${note.id}`)
+      .set(bearer(u.accessToken))
+      .send({ bodyMd: 'server', baseRev: 1 });
+    // Two edits from the same stale base, as queued saves from one device can be.
+    for (const bodyMd of ['mine 1', 'mine 2']) {
+      await t.http
+        .patch(`/v1/notes/${note.id}`)
+        .set(bearer(u.accessToken))
+        .send({ bodyMd, baseRev: 1 });
+    }
+    const open = await t.http.get(`/v1/notes/${note.id}/conflicts`).set(bearer(u.accessToken));
+    expect(open.body.items).toHaveLength(2);
+
+    await t.http
+      .post(`/v1/notes/${note.id}/conflicts/${open.body.items[0].versionId}/resolve`)
+      .set(bearer(u.accessToken))
+      .send({ strategy: 'merged', baseRev: 2, bodyMd: 'server + mine 2' });
+    expect(
+      (await t.http.get(`/v1/notes/${note.id}/conflicts`).set(bearer(u.accessToken))).body.items,
+    ).toEqual([]);
+  });
+
   it('lists and resolves conflicts (merged)', async () => {
     const t = await makeApp(pools);
     const u = await verifiedUser(t);

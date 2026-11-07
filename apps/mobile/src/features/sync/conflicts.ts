@@ -66,5 +66,6 @@ export async function resolveConflict(
       else if (e.status !== 404) throw e;
     }
   }
-  await repos.conflicts.resolve(conflict.id);
+  // Stacked edits from one device can leave several conflicts; the choice settles them all.
+  await repos.conflicts.resolveNote(conflict.note_id);
 }
