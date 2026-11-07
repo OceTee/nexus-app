@@ -73,7 +73,9 @@ export default function SyncStatus() {
         : run.kind === 'paused'
           ? run.why === 'unverified'
             ? 'Paused until you confirm your email'
-            : 'Paused: sign in to sync'
+            : run.why === 'update-required'
+              ? 'Paused: update NEXUS to keep syncing'
+              : 'Paused: sign in to sync'
           : run.kind === 'error'
             ? `Paused after an error (${run.code})`
             : 'Up to date';
@@ -100,6 +102,12 @@ export default function SyncStatus() {
           <Text variant="callout" tone="inkSoft" style={styles.gap}>
             Last sync: {lastSyncAt ? relativeDate(new Date(lastSyncAt).toISOString()) : 'never'}
           </Text>
+          {run.kind === 'paused' && run.why === 'update-required' ? (
+            <Text variant="callout" tone="inkSoft" style={styles.gap}>
+              This version of the app is too old for the server. Your notes stay on this device and
+              keep working; install the latest version to sync them again.
+            </Text>
+          ) : null}
           <Text variant="footnote" tone="inkFaint" style={styles.gap}>
             Cursor {data?.cursor ?? 0}
             {server.data ? ` · server ${server.data.serverSeq}` : ''}

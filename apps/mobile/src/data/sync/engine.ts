@@ -11,6 +11,7 @@ import {
 } from '@nexus/shared';
 import { ApiError, api } from '@/infra/apiClient';
 import { getDb } from '@/infra/db';
+import { kv } from '@/infra/kv';
 import { secureStore } from '@/infra/secureStore';
 import { useSessionStore } from '@/stores/session';
 import { events, type Table } from '../events';
@@ -24,6 +25,12 @@ const TRANSIENT_4XX = new Set([401, 408, 409, 429]);
 const MAX_ATTEMPTS = 3;
 /** Guard against a server that keeps saying hasMore. */
 const MAX_BATCHES = 200;
+/**
+ * The client schema version the server refused (T-88). Sync stays paused for
+ * that version until the app is updated, or until a manual "Sync now" asks
+ * the server again (it may have lowered its minimum since).
+ */
+const REFUSED_SCHEMA_KEY = 'nexus.sync.refusedSchema';
 
 export type SyncOutcome =
   | { kind: 'ok'; batches: number }
@@ -60,6 +67,11 @@ async function run(reason: SyncReason): Promise<SyncOutcome> {
   }
   if (session.user && !session.user.emailVerified) {
     store.set({ state: { kind: 'paused', why: 'unverified' } });
+    return { kind: 'skipped', reason: 'paused' };
+  }
+  if (reason === 'manual') kv.remove(REFUSED_SCHEMA_KEY);
+  if (kv.get(REFUSED_SCHEMA_KEY) === String(CLIENT_SCHEMA_VERSION)) {
+    store.set({ state: { kind: 'paused', why: 'update-required' } });
     return { kind: 'skipped', reason: 'paused' };
   }
   if (store.online === false && reason !== 'manual') {
@@ -124,6 +136,16 @@ async function handleFailure(e: unknown): Promise<SyncOutcome> {
     await secureStore.clearRefreshToken();
     useSessionStore.getState().expire();
     store.set({ state: { kind: 'paused', why: 'signed-out' } });
+    events.emit('outbox');
+    return { kind: 'error', error: e };
+  }
+
+  if (err?.code === 'CLIENT_SCHEMA_TOO_OLD') {
+    // The server needs a newer app (T-88): keep every change queued, stop
+    // asking until the app is updated, and keep working locally.
+    await repos.outbox.release(db, 'CLIENT_SCHEMA_TOO_OLD');
+    kv.set(REFUSED_SCHEMA_KEY, String(CLIENT_SCHEMA_VERSION));
+    store.set({ state: { kind: 'paused', why: 'update-required' } });
     events.emit('outbox');
     return { kind: 'error', error: e };
   }

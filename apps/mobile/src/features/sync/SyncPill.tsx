@@ -41,9 +41,14 @@ export function SyncPill() {
     colour = t.colors.inkSoft;
   } else if (run.kind === 'paused') {
     Icon = AlertCircle;
-    label = run.why === 'unverified' ? 'Confirm email to sync' : 'Sign in to sync';
+    label =
+      run.why === 'unverified'
+        ? 'Confirm email to sync'
+        : run.why === 'update-required'
+          ? 'Update to sync'
+          : 'Sign in to sync';
     colour = t.colors.accent;
-    target = '/settings';
+    target = run.why === 'update-required' ? '/settings/sync' : '/settings';
   } else if (run.kind === 'error') {
     Icon = AlertCircle;
     label = 'Sync paused';

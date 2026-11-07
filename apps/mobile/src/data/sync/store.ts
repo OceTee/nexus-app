@@ -8,7 +8,7 @@ export type SyncRunState =
   | { kind: 'idle' }
   | { kind: 'running'; batch: number }
   | { kind: 'offline' }
-  | { kind: 'paused'; why: 'unverified' | 'signed-out' }
+  | { kind: 'paused'; why: 'unverified' | 'signed-out' | 'update-required' }
   | { kind: 'error'; code: string; message: string; retryAt: number | null };
 
 export interface SyncError {

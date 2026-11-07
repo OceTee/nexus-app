@@ -28,9 +28,19 @@ jest.mock('../../../src/infra/apiClient', () => ({
 jest.mock('../../../src/infra/secureStore', () => ({
   secureStore: { clearRefreshToken: jest.fn().mockResolvedValue(undefined) },
 }));
-jest.mock('../../../src/infra/kv', () => ({
-  kv: { get: () => null, set: jest.fn(), remove: jest.fn(), setJson: jest.fn() },
-}));
+// In-memory preferences (the engine remembers a refused client schema there).
+jest.mock('../../../src/infra/kv', () => {
+  const values = new Map<string, string>();
+  return {
+    kv: {
+      values,
+      get: (k: string) => values.get(k) ?? null,
+      set: jest.fn((k: string, v: string) => void values.set(k, v)),
+      remove: jest.fn((k: string) => void values.delete(k)),
+      setJson: jest.fn(),
+    },
+  };
+});
 
 const apiMock = jest.mocked(api);
 let db: SqlDb;
@@ -82,6 +92,9 @@ const outbox = () => repos.outbox.all(db);
 const syncState = () => useSyncStore.getState().state;
 
 beforeEach(async () => {
+  (
+    jest.requireMock('../../../src/infra/kv') as { kv: { values: Map<string, string> } }
+  ).kv.values.clear();
   db = await createTestDb();
   jest.mocked(getDb).mockReturnValue(db);
   apiMock.mockReset();
@@ -333,6 +346,34 @@ describe('runSync failures', () => {
     expect(await outbox()).toEqual([
       expect.objectContaining({ status: 'pending', last_error: 'DEVICE_REVOKED' }),
     ]);
+  });
+});
+
+describe('T-88 schema gate', () => {
+  const tooOld = () => new ApiError(426, 'CLIENT_SCHEMA_TOO_OLD', 'Update the app to keep syncing');
+
+  it('pauses sync until the app is updated, keeping changes queued', async () => {
+    await repos.notes.save({ title: 'Kept', bodyMd: 'local' });
+    const bodies = serveSync(tooOld);
+
+    expect((await runSync('start')).kind).toBe('error');
+    expect(syncState()).toEqual({ kind: 'paused', why: 'update-required' });
+    expect(await outbox()).toEqual([
+      expect.objectContaining({ status: 'pending', last_error: 'CLIENT_SCHEMA_TOO_OLD' }),
+    ]);
+
+    // Automatic triggers don't ask the server again…
+    expect(await runSync('periodic')).toEqual({ kind: 'skipped', reason: 'paused' });
+    expect(bodies).toHaveLength(1);
+  });
+
+  it('asks again on a manual sync, in case the server lowered its minimum', async () => {
+    serveSync(tooOld);
+    await runSync('start');
+    const bodies = serveSync(() => response());
+    expect(await runSync('manual')).toEqual({ kind: 'ok', batches: 1 });
+    expect(bodies).toHaveLength(1);
+    expect(syncState()).toEqual({ kind: 'idle' });
   });
 });
 

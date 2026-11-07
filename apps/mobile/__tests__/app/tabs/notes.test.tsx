@@ -130,6 +130,7 @@ describe('Notes tab sync pill', () => {
     ['running', { state: { kind: 'running', batch: 0 } }, 'Syncing…'],
     ['unverified', { state: { kind: 'paused', why: 'unverified' } }, 'Confirm email to sync'],
     ['signed out', { state: { kind: 'paused', why: 'signed-out' } }, 'Sign in to sync'],
+    ['too old', { state: { kind: 'paused', why: 'update-required' } }, 'Update to sync'],
     ['error', { state: { kind: 'error', code: 'X', message: 'x', retryAt: null } }, 'Sync paused'],
   ] as const)('shows the %s state as "%s"', async (_name, patch, label) => {
     signInAs();

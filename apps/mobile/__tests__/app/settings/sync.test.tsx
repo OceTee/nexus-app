@@ -62,6 +62,7 @@ describe('Sync status', () => {
     [{ state: { kind: 'offline' } }, 'Offline: changes are saved on this device'],
     [{ state: { kind: 'paused', why: 'unverified' } }, 'Paused until you confirm your email'],
     [{ state: { kind: 'paused', why: 'signed-out' } }, 'Paused: sign in to sync'],
+    [{ state: { kind: 'paused', why: 'update-required' } }, 'Paused: update NEXUS to keep syncing'],
     [
       { state: { kind: 'error', code: 'SERVER_DOWN', message: 'x', retryAt: null } },
       'Paused after an error (SERVER_DOWN)',
@@ -71,6 +72,13 @@ describe('Sync status', () => {
     useSyncStore.setState(patch as never);
     await show();
     expect(await screen.findByText(label)).toBeTruthy();
+  });
+
+  it('explains what to do when the app is too old for the server (T-88)', async () => {
+    signInAs();
+    useSyncStore.setState({ state: { kind: 'paused', why: 'update-required' } });
+    await show();
+    expect(await screen.findByText(/install the latest version to sync/)).toBeTruthy();
   });
 
   it('syncs now and refreshes the server status', async () => {
