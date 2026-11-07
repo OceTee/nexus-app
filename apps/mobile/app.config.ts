@@ -83,6 +83,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       ['expo-font', { fonts }],
       './plugins/withCmakeVersion',
       './plugins/withE2ECleartext',
+      './plugins/withReleaseSigning',
     ],
     experiments: { typedRoutes: true, reactCompiler: true },
     extra: { apiUrl: process.env.EXPO_PUBLIC_API_URL },

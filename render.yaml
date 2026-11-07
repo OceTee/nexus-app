@@ -1,0 +1,70 @@
+# Render Blueprint for the NEXUS API (free plan). Render reads this file when
+# you create a Blueprint from the repo (Dashboard → New → Blueprint).
+#
+# The free plan sleeps after 15 idle minutes; an uptime monitor pinging
+# /healthz every 5 minutes keeps it awake (750 free hours a month cover one
+# always-on service). TDD Section J prefers Railway Hobby ($5/month): the same
+# image runs there unchanged (docs/DEPLOYMENT.md).
+#
+# Values marked `sync: false` are secrets: Render asks for them when the
+# Blueprint is created and never stores them in this file.
+
+services:
+  - type: web
+    name: nexus-api
+    runtime: docker
+    plan: free
+    region: frankfurt
+    dockerfilePath: ./apps/api/Dockerfile
+    dockerContext: .
+    healthCheckPath: /readyz
+    # Deploy only commits whose CI checks passed.
+    autoDeployTrigger: checksPass
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: ROLE
+        value: all
+      - key: MIGRATE_ON_START
+        value: 'true'
+      - key: LOG_LEVEL
+        value: info
+      - key: RATE_LIMIT_STORE
+        value: postgres
+      # Neon: pooled URL as the nexus_api role; direct URL as the owner (migrations, jobs).
+      - key: DATABASE_URL
+        sync: false
+      - key: DATABASE_URL_DIRECT
+        sync: false
+      - key: JOBS_DATABASE_URL
+        sync: false
+      - key: DATABASE_URL_MAINT
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_KID
+        value: k1
+      - key: APP_URL
+        sync: false
+      - key: CORS_ORIGINS
+        sync: false
+      # Email (Resend). Without a key, emails are only logged.
+      - key: RESEND_API_KEY
+        sync: false
+      - key: MAIL_FROM
+        sync: false
+      # Attachments: any S3-compatible bucket (Backblaze B2 or Cloudflare R2).
+      - key: R2_ENDPOINT
+        sync: false
+      - key: R2_REGION
+        sync: false
+      - key: R2_BUCKET
+        sync: false
+      - key: R2_ACCESS_KEY_ID
+        sync: false
+      - key: R2_SECRET_ACCESS_KEY
+        sync: false
+      - key: EXPO_ACCESS_TOKEN
+        sync: false
+      - key: BACKUP_AGE_RECIPIENT
+        sync: false

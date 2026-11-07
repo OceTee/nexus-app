@@ -145,7 +145,9 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Build the API image
-        run: docker build -f apps/api/Dockerfile -t nexus-api .
+        run: |
+          docker build -f apps/api/Dockerfile -t nexus-api .
+          docker run --rm --entrypoint pg_dump nexus-api --version
 
       # The image must migrate a fresh database and come up ready, as it does on
       # the host (MIGRATE_ON_START=true), with production settings.

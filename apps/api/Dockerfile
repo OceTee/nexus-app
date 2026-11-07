@@ -16,6 +16,8 @@ RUN pnpm --filter @nexus/api build \
   && pnpm --filter @nexus/api deploy --prod --legacy /out
 
 FROM node:24-alpine
+# pg_dump for the nightly encrypted backup job (src/jobs/pgDump.ts).
+RUN apk add --no-cache postgresql18-client
 WORKDIR /app
 ENV NODE_ENV=production
 COPY --from=build /out/package.json ./

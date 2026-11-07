@@ -1,0 +1,108 @@
+# Release (TDD Phase 13): a `v*` tag builds the Android APK and publishes it on
+# GitHub Releases. Run by hand (workflow_dispatch) to build without publishing.
+#
+# Needs the repository variable API_URL (the deployed API, e.g.
+# https://nexus-api.onrender.com). Signs with the upload key when the secrets
+# ANDROID_KEYSTORE_BASE64, ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS and
+# ANDROID_KEY_PASSWORD are set; otherwise the APK is debug-signed (fine for a
+# preview, not for the Play Store). Steps: docs/DEPLOYMENT.md.
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  android:
+    name: Android APK
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      APP_ENV: preview
+      EXPO_PUBLIC_API_URL: ${{ vars.API_URL }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check the API URL is set
+        run: |
+          if [ -z "$EXPO_PUBLIC_API_URL" ]; then
+            echo "::error::Set the repository variable API_URL (Settings → Secrets and variables → Actions → Variables)."
+            exit 1
+          fi
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Generate the Android project
+        working-directory: apps/mobile
+        run: npx expo prebuild --platform android --no-install
+
+      - name: Upload key
+        id: key
+        env:
+          KEYSTORE: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          STORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          if [ -z "$KEYSTORE" ]; then
+            echo "::warning::No upload key in secrets: the APK is debug-signed."
+            echo "args=" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "$KEYSTORE" | base64 -d > "$RUNNER_TEMP/upload.keystore"
+          {
+            echo "NEXUS_UPLOAD_STORE_FILE=$RUNNER_TEMP/upload.keystore"
+            echo "NEXUS_UPLOAD_STORE_PASSWORD=$STORE_PASSWORD"
+            echo "NEXUS_UPLOAD_KEY_ALIAS=$KEY_ALIAS"
+            echo "NEXUS_UPLOAD_KEY_PASSWORD=$KEY_PASSWORD"
+          } >> apps/mobile/android/gradle.properties
+          echo "args=signed" >> "$GITHUB_OUTPUT"
+
+      - name: Build the release APK
+        working-directory: apps/mobile/android
+        run: ./gradlew app:assembleRelease -PreactNativeArchitectures=arm64-v8a,armeabi-v7a --console=plain
+
+      - name: Name the APK
+        id: apk
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          [ "$GITHUB_REF_TYPE" = tag ] || VERSION="dev-${GITHUB_SHA::7}"
+          OUT="nexus-${VERSION}.apk"
+          cp apps/mobile/android/app/build/outputs/apk/release/app-release.apk "$OUT"
+          sha256sum "$OUT" > "$OUT.sha256"
+          echo "file=$OUT" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: android-apk
+          path: |
+            ${{ steps.apk.outputs.file }}
+            ${{ steps.apk.outputs.file }}.sha256
+          retention-days: 30
+
+      - name: Publish the GitHub Release
+        if: github.ref_type == 'tag'
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: |
+            ${{ steps.apk.outputs.file }}
+            ${{ steps.apk.outputs.file }}.sha256
