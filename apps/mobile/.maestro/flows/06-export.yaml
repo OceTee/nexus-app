@@ -12,9 +12,11 @@ tags: [offline]
 - tapOn: 'Settings'
 - tapOn: 'Export, Markdown bundle or JSON'
 - assertVisible: '1 note.*'
-- tapOn: 'Export'
+# By id: the screen header also reads "Export".
+- tapOn:
+    id: 'export-start'
 - extendedWaitUntil:
-    visible: 'nexus-markdown-.*\.zip'
+    visible: '.*nexus-markdown-.*\.zip.*'
     timeout: 30000
 - back
 - assertVisible: 'Export ready'

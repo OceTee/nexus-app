@@ -179,6 +179,7 @@ export default function Export() {
 
         <Button
           label="Export"
+          testID="export-start"
           onPress={() => void start()}
           disabled={progress !== null && progress.phase !== 'done'}
         />

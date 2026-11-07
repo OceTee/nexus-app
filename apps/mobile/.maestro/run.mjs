@@ -138,9 +138,11 @@ if (process.env.GITHUB_ACTIONS) {
       `::error title=E2E ${r.file}::${esc(`${r.reason || 'failed'} || SCREEN: ${r.screen}`)}`,
     );
   }
-  const passedCount = results.filter((x) => x.status === 'passed').length;
+  const count = (pred) => results.filter(pred).length;
   console.log(
-    `::notice title=E2E summary::${passedCount} passed, ${results.length - passedCount} not passed`,
+    `::notice title=E2E summary::${count((x) => x.status === 'passed')} passed, ` +
+      `${count((x) => x.status === 'FAILED')} failed, ` +
+      `${count((x) => x.status.startsWith('skipped'))} skipped`,
   );
 }
 process.exit(results.some((r) => r.status === 'FAILED') ? 1 : 0);
