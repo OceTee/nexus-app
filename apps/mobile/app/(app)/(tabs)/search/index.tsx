@@ -177,21 +177,25 @@ export default function Search() {
         >
           <Chip
             label={tagName ?? 'Tag'}
+            accessibilityLabel={tagName ? `Tag: ${tagName}` : 'Tag'}
             selected={Boolean(tagName)}
             onPress={() => setPicker('tag')}
           />
           <Chip
             label={collectionName ?? 'Collection'}
+            accessibilityLabel={collectionName ? `Collection: ${collectionName}` : 'Collection'}
             selected={Boolean(collectionName)}
             onPress={() => setPicker('collection')}
           />
           <Chip
             label={filters.since ? dateLabel : 'Date'}
+            accessibilityLabel={filters.since ? `Date: ${dateLabel}` : 'Date'}
             selected={Boolean(filters.since)}
             onPress={() => setPicker('date')}
           />
           <Chip
             label="Has attachment"
+            accessibilityLabel={'Has attachment'}
             selected={Boolean(filters.hasAttachment)}
             onPress={() =>
               setFilters(({ hasAttachment, ...f }) =>

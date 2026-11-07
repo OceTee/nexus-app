@@ -25,6 +25,9 @@ export default function Trash() {
   const { data: notes } = useLocalQuery(['notes'], () => repos.notes.trash());
   const [target, setTarget] = useState<Note | null>(null);
   const [confirm, setConfirm] = useState<'one' | 'all' | null>(null);
+  // The action sheet clears `target` as it closes, so the note to delete is
+  // kept apart until the confirmation answers.
+  const [doomed, setDoomed] = useState<Note | null>(null);
   const [now] = useState(() => Date.now());
 
   const daysLeft = (n: Note) =>
@@ -95,7 +98,10 @@ export default function Trash() {
                   label: 'Delete permanently',
                   icon: Trash2,
                   destructive: true,
-                  onPress: () => setConfirm('one'),
+                  onPress: () => {
+                    setDoomed(target);
+                    setConfirm('one');
+                  },
                 },
               ]
             : []
@@ -106,6 +112,7 @@ export default function Trash() {
         onClose={() => {
           setConfirm(null);
           setTarget(null);
+          setDoomed(null);
         }}
         title={confirm === 'all' ? 'Empty the trash?' : 'Delete this note permanently?'}
         body="This cannot be undone."
@@ -113,7 +120,7 @@ export default function Trash() {
         destructive
         onConfirm={() => {
           const ids =
-            confirm === 'all' ? (notes ?? []).map((n) => n.id) : target ? [target.id] : [];
+            confirm === 'all' ? (notes ?? []).map((n) => n.id) : doomed ? [doomed.id] : [];
           void purgeNotes(getDb(), ids).then(() =>
             toast.show(ids.length === 1 ? 'Note deleted' : `${ids.length} notes deleted`),
           );

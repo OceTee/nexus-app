@@ -29,12 +29,19 @@ export default function RootLayout() {
   const [dbError, setDbError] = useState<string | null>(null);
   const [dbReady, setDbReady] = useState(false);
 
-  useEffect(() => {
+  const open = () =>
     openDatabase().then(
-      () => setDbReady(true),
+      () => {
+        setDbError(null);
+        setDbReady(true);
+      },
       (err: unknown) => setDbError(String(err)),
     );
+
+  useEffect(() => {
+    void open();
     void restoreSession();
+    // Runs once on launch; `open` only sets state.
   }, []);
 
   const ready = (dbReady || dbError !== null) && status !== 'loading';
@@ -49,7 +56,11 @@ export default function RootLayout() {
         <ThemeProvider>
           <QueryClientProvider client={queryClient}>
             <KeyboardProvider>
-              {dbError ? <DatabaseError message={dbError} /> : <Routes />}
+              {dbError ? (
+                <DatabaseError message={dbError} onRetry={() => void open()} />
+              ) : (
+                <Routes />
+              )}
               <ToastHost />
             </KeyboardProvider>
           </QueryClientProvider>
@@ -84,7 +95,7 @@ function Routes() {
   );
 }
 
-function DatabaseError({ message }: { message: string }) {
+function DatabaseError({ message, onRetry }: { message: string; onRetry: () => void }) {
   const t = useTheme();
   return (
     <View style={[styles.center, { backgroundColor: t.colors.surface }]}>
@@ -94,7 +105,7 @@ function DatabaseError({ message }: { message: string }) {
       <Text variant="callout" tone="inkSoft" align="center" style={styles.gap}>
         {message}
       </Text>
-      <Button label="Try again" onPress={() => void openDatabase()} block={false} />
+      <Button label="Try again" onPress={onRetry} block={false} />
     </View>
   );
 }

@@ -40,18 +40,21 @@ export function Chip({
   colour,
   selected = false,
   onPress,
+  accessibilityLabel,
 }: {
   label: string;
   colour?: string | null;
   selected?: boolean;
   onPress?: () => void;
+  /** Defaults to "Tag <label>"; filter chips pass their own. */
+  accessibilityLabel?: string;
 }) {
   const t = useTheme();
   const c = colour ?? t.colors.primary;
   return (
     <Pressable
       accessibilityRole={onPress ? 'button' : 'text'}
-      accessibilityLabel={`Tag ${label}`}
+      accessibilityLabel={accessibilityLabel ?? `Tag ${label}`}
       accessibilityState={{ selected }}
       onPress={onPress}
       hitSlop={8}

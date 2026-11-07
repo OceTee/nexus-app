@@ -58,6 +58,10 @@ export function openDatabase(): Promise<SqlDb> {
     handle = sqlDb;
     return sqlDb;
   })();
+  // A failed open is forgotten, so "Try again" really tries again.
+  opening.catch(() => {
+    opening = undefined;
+  });
   return opening;
 }
 
