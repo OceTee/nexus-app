@@ -48,6 +48,11 @@ const EnvSchema = z
     R2_ACCESS_KEY_ID: z.string().min(1).optional(),
     R2_SECRET_ACCESS_KEY: z.string().min(1).optional(),
     R2_BUCKET: z.string().min(3).default('nexus-attachments-dev'),
+    /**
+     * Signing region. R2 and MinIO accept `auto`; other S3-compatible stores
+     * (Backblaze B2, for one) need their real region, e.g. `us-west-004`.
+     */
+    R2_REGION: z.string().min(1).default('auto'),
     /** Cross-user maintenance jobs (nexus_maint, BYPASSRLS). */
     DATABASE_URL_MAINT: PgUrl.optional(),
     /** age recipient (public key) for encrypted nightly backups. */

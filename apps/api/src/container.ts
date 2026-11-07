@@ -179,5 +179,6 @@ function storageFromEnv(env: Env, logger: Logger): Storage {
     bucket: env.R2_BUCKET,
     accessKeyId: env.R2_ACCESS_KEY_ID,
     secretAccessKey: env.R2_SECRET_ACCESS_KEY,
+    region: env.R2_REGION,
   });
 }

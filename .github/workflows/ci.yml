@@ -136,3 +136,29 @@ jobs:
         if: always()
         working-directory: apps/api
         run: node ../../scripts/coverage-summary.mjs coverage/coverage-summary.json api 3 || true
+
+  image:
+    name: Stage 4 - Container image
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build the API image
+        run: docker build -f apps/api/Dockerfile -t nexus-api .
+
+      # The image must migrate a fresh database and come up ready, as it does on
+      # the host (MIGRATE_ON_START=true), with production settings.
+      - name: Start Postgres
+        run: docker compose up -d --wait postgres
+
+      - name: Run the image and check it is ready
+        run: |
+          docker run -d --name api --network host             -e NODE_ENV=production -e MIGRATE_ON_START=true -e PORT=4000             -e DATABASE_URL=postgres://nexus:nexus@localhost:5432/nexus             -e JOBS_DATABASE_URL=postgres://nexus:nexus@localhost:5432/nexus             -e JWT_SECRET="$(openssl rand -base64 32 | tr '+/' '-_' | tr -d '=')"             -e APP_URL=https://app.nexus.example nexus-api
+          for i in $(seq 1 60); do curl -sf localhost:4000/readyz && break; sleep 2; done
+          curl -sf localhost:4000/readyz
+          curl -sf localhost:4000/v1/meta
+
+      - name: API logs
+        if: always()
+        run: docker logs api 2>&1 | tail -50 || true
