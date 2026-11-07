@@ -70,10 +70,19 @@ const EnvSchema = z
       .transform((v) => v === 'true' || v === '1'),
     /** `postgres` in deployed environments; `memory` for local experiments and tests. */
     RATE_LIMIT_STORE: z.enum(['postgres', 'memory']).default('postgres'),
+    /**
+     * Multiplies every rate limit. CI security scans only (ZAP sends thousands of
+     * requests); must stay 1 in production.
+     */
+    RATE_LIMIT_MULTIPLIER: z.coerce.number().int().min(1).max(10_000).default(1),
   })
   .refine((e) => e.NODE_ENV !== 'production' || !e.E2E_MODE, {
     message: 'E2E_MODE must not be enabled in production',
     path: ['E2E_MODE'],
+  })
+  .refine((e) => e.NODE_ENV !== 'production' || e.RATE_LIMIT_MULTIPLIER === 1, {
+    message: 'RATE_LIMIT_MULTIPLIER must be 1 in production',
+    path: ['RATE_LIMIT_MULTIPLIER'],
   })
   .refine((e) => e.NODE_ENV !== 'production' || e.DATABASE_URL !== undefined, {
     message: 'DATABASE_URL is required in production',

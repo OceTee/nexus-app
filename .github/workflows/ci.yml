@@ -81,6 +81,11 @@ jobs:
           (cd apps/mobile && node ../../scripts/coverage-summary.mjs coverage/coverage-summary.json mobile 2) || true
           (cd packages/shared && node ../../scripts/coverage-summary.mjs coverage/coverage-summary.json shared 2) || true
 
+      # T-33: the spec is regenerated from the routes (a unit test fails if it is
+      # stale) and linted here.
+      - name: OpenAPI lint
+        run: npx -y @redocly/cli@2.76.0 lint docs/api/openapi.json
+
       - name: Upload coverage
         if: always()
         uses: actions/upload-artifact@v4

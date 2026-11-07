@@ -1,0 +1,93 @@
+# T-72 ZAP scan (TDD Section L, Security testing): OWASP ZAP's API scan,
+# driven by docs/api/openapi.json, against the API running in CI with a signed-in
+# test account. Pass: no high or medium alerts. Until staging exists (Phase 13)
+# this scans the API directly, without the hosting provider's TLS and proxy.
+name: Security
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 4 * * 1'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/security.yml'
+      - '.zap/**'
+      - 'docs/api/openapi.json'
+      - 'apps/api/src/http/**'
+
+concurrency:
+  group: security-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  zap:
+    name: ZAP API scan (T-72)
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Start Postgres and MinIO
+        run: docker compose up -d --wait postgres minio && docker compose up minio-init
+
+      - name: Configure, migrate and build the API
+        working-directory: apps/api
+        run: |
+          cp .env.example .env
+          sed -i "s|^JWT_SECRET=.*|JWT_SECRET=$(openssl rand -base64 32 | tr '+/' '-_' | tr -d '=')|" .env
+          sed -i "s|^RATE_LIMIT_STORE=.*|RATE_LIMIT_STORE=memory|" .env
+          sed -i "s|^E2E_MODE=.*|E2E_MODE=true|" .env
+          sed -i "s|^RATE_LIMIT_MULTIPLIER=.*|RATE_LIMIT_MULTIPLIER=1000|" .env
+          sed -i "s|^LOG_LEVEL=.*|LOG_LEVEL=warn|" .env
+          pnpm db:migrate && pnpm build
+
+      - name: Start the API
+        working-directory: apps/api
+        run: |
+          nohup node --env-file=.env dist/index.js > "$RUNNER_TEMP/api.log" 2>&1 &
+          for i in $(seq 1 60); do curl -sf localhost:4000/readyz && break; sleep 2; done
+          curl -sf localhost:4000/readyz
+
+      # A verified throwaway account, so the scan reaches the protected routes.
+      - name: Create the scan account
+        id: account
+        run: node scripts/zap-account.mjs http://localhost:4000
+
+      # ZAP's packaged API scan, driven by the OpenAPI document. The access token
+      # goes in through ZAP_AUTH_HEADER_VALUE; tokens last 15 minutes, so the
+      # active scan stops at 12. The exit code is ignored: the next step decides.
+      - name: ZAP API scan
+        env:
+          ZAP_AUTH_HEADER_VALUE: Bearer ${{ steps.account.outputs.token }}
+        run: |
+          chmod a+w .
+          docker run --rm --network=host -v "$PWD:/zap/wrk:rw"             -e ZAP_AUTH_HEADER_VALUE -e ZAP_AUTH_HEADER=Authorization             ghcr.io/zaproxy/zaproxy:stable zap-api-scan.py             -t /zap/wrk/docs/api/openapi.json -f openapi -O http://localhost:4000             -c /zap/wrk/.zap/rules.tsv             -J report_json.json -r report_html.html -w report_md.md             -z "-config scanner.maxScanDurationInMins=12" || echo "zap-api-scan exited $?"
+
+      - name: Check for high and medium alerts
+        if: always()
+        run: node scripts/zap-report.mjs report_json.json
+
+      - name: Upload the report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: zap-api-scan
+          path: |
+            report_html.html
+            report_json.json
+            report_md.md
+            ${{ runner.temp }}/api.log
+          retention-days: 30

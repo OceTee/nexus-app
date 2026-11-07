@@ -99,6 +99,19 @@ Database tests run against a throwaway PostgreSQL 18 container (Docker must be r
 pnpm --filter @nexus/api test:db
 ```
 
+## API reference (OpenAPI)
+
+`docs/api/openapi.json` is generated from the routes the API serves and the Zod schemas that
+validate them (`apps/api/src/openapi`); response shapes are listed in
+`apps/api/src/openapi/responses.ts`. Regenerate it after changing a route or schema:
+
+```bash
+pnpm --filter @nexus/api openapi
+```
+
+A unit test fails if the committed file is stale or a route has no documented response, and CI
+lints the file with Redocly (`redocly.yaml`).
+
 ## Load smoke test (k6)
 
 `scripts/k6/sync-smoke.js` runs 10 virtual devices against `POST /v1/sync` for 30 seconds and fails if the sync p95 exceeds 800 ms. It signs in as the seeded demo user, so seed first and start the API with `RATE_LIMIT_STORE=memory` (ten sign-ins from one IP would otherwise hit the auth limit).

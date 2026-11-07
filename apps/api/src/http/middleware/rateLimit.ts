@@ -20,15 +20,17 @@ export interface LimiterStore {
   prefix?: string;
 }
 
-/** Builds every limiter from TDD Section F on one store. */
 /**
- * Builds every limiter. `relaxAuth` (E2E_MODE only) multiplies the auth burst
- * allowance so an end-to-end suite can create and sign in many accounts.
+ * Builds every limiter from TDD Section F on one store. `relaxAuth` (E2E_MODE
+ * only) multiplies the auth burst allowance so an end-to-end suite can create
+ * and sign in many accounts; `multiplier` (CI security scans only) raises
+ * every limit.
  */
-export function createLimiters(store: LimiterStore, relaxAuth = false): Limiters {
+export function createLimiters(store: LimiterStore, relaxAuth = false, multiplier = 1): Limiters {
   const make = (name: LimiterName): RateLimiterAbstract => {
     const { duration } = RATE_LIMITS[name];
-    const points = RATE_LIMITS[name].points * (relaxAuth && name === 'authBurst' ? 100 : 1);
+    const points =
+      RATE_LIMITS[name].points * (relaxAuth && name === 'authBurst' ? 100 : 1) * multiplier;
     const keyPrefix = `${store.prefix ?? 'rl'}:${name}`;
     if (store.kind === 'postgres') {
       if (!store.pool) throw new Error('Postgres rate-limit store needs a pool');

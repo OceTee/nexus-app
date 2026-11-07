@@ -85,6 +85,7 @@ export function createContainer(deps: ContainerDeps): Container {
   const limiters = createLimiters(
     deps.limiterStore ?? { kind: env.RATE_LIMIT_STORE, pool },
     env.E2E_MODE,
+    env.RATE_LIMIT_MULTIPLIER,
   );
   const email =
     deps.email ??

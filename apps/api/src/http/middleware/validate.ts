@@ -29,7 +29,7 @@ export function issuesToDetails(error: z.ZodError): Record<string, unknown>[] {
  * the typed values in `req.valid`; the body also replaces `req.body`.
  */
 export function validate(schemas: ValidateSchemas): RequestHandler {
-  return (req, _res, next) => {
+  const handler: RequestHandler = (req, _res, next) => {
     req.valid ??= {};
     for (const part of ['params', 'query', 'body'] as const) {
       const schema = schemas[part];
@@ -41,6 +41,9 @@ export function validate(schemas: ValidateSchemas): RequestHandler {
     }
     next();
   };
+  // The OpenAPI generator reads the schemas from here (src/openapi), so the
+  // published spec is built from the same schemas that validate requests.
+  return Object.assign(handler, { schemas });
 }
 
 /** Typed accessor for validated input. */

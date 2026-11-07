@@ -4,7 +4,7 @@ import type { AccessTokenSigner } from '../../lib/tokens';
 
 /** Verifies the Bearer access token and sets `req.auth` (no database read). */
 export function requireAuth(signer: AccessTokenSigner): RequestHandler {
-  return async (req, _res, next) => {
+  const handler: RequestHandler = async (req, _res, next) => {
     const header = req.get('authorization') ?? '';
     const token = header.startsWith('Bearer ') ? header.slice(7).trim() : '';
     if (!token) throw new UnauthenticatedError();
@@ -12,6 +12,8 @@ export function requireAuth(signer: AccessTokenSigner): RequestHandler {
     req.auth = { userId: claims.sub, deviceId: claims.dev, emailVerified: claims.ver };
     next();
   };
+  // Marks bearer-protected routes for the OpenAPI generator (src/openapi).
+  return Object.assign(handler, { requiresAuth: true });
 }
 
 /** Blocks sync, attachments and exports until the email is verified (403 EMAIL_UNVERIFIED). */

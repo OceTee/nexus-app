@@ -1,0 +1,3 @@
+# ZAP rule overrides for the API scan (.github/workflows/security.yml).
+# One rule per line, tab-separated: <rule id>	<IGNORE|INFO|WARN|FAIL>	<reason>
+# Every IGNORE needs a reason that a reviewer would accept.
