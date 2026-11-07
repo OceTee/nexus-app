@@ -13,7 +13,16 @@ tags: [offline]
 - tapOn: 'Delete'
 - assertVisible: '“Old idea” moved to Trash'
 - assertNotVisible: 'Old idea'
-- tapOn: 'Settings'
+# The action sheet may still be fading out on a slow emulator and swallow the
+# first tap on the tab bar, so wait and retry the tab tap once.
+- waitForAnimationToEnd
+- retry:
+    maxRetries: 2
+    commands:
+      - tapOn: 'Settings'
+      - extendedWaitUntil:
+          visible: 'Trash'
+          timeout: 5000
 - tapOn: 'Trash'
 - assertVisible: 'Old idea'
 - tapOn: 'Restore Old idea'
