@@ -75,6 +75,12 @@ jobs:
       - name: Unit tests with coverage
         run: pnpm turbo run test
 
+      - name: Coverage summary
+        if: always()
+        run: |
+          (cd apps/mobile && node ../../scripts/coverage-summary.mjs coverage/coverage-summary.json mobile 2) || true
+          (cd packages/shared && node ../../scripts/coverage-summary.mjs coverage/coverage-summary.json shared 2) || true
+
       - name: Upload coverage
         if: always()
         uses: actions/upload-artifact@v4
@@ -112,5 +118,13 @@ jobs:
             exit 1
           fi
 
-      - name: Database tests (PostgreSQL 18 via Testcontainers)
-        run: pnpm --filter @nexus/api test:db
+      # Unit and database projects together: most API code is exercised only by
+      # the database tests, so coverage is measured across both.
+      - name: Database and unit tests with coverage (PostgreSQL 18 via Testcontainers)
+        working-directory: apps/api
+        run: pnpm exec vitest run --coverage --coverage
+
+      - name: Coverage summary
+        if: always()
+        working-directory: apps/api
+        run: node ../../scripts/coverage-summary.mjs coverage/coverage-summary.json api 3 || true

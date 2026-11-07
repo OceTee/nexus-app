@@ -107,6 +107,12 @@ pnpm --filter @nexus/api test:db
 docker run --rm -v "$PWD/scripts/k6:/scripts" grafana/k6:latest run -e API_URL=http://host.docker.internal:4000 -e PASSWORD=$DEMO_PASSWORD /scripts/sync-smoke.js
 ```
 
+`scripts/k6/sync-load.js` is the full load test (T-62): 50 virtual devices (10 accounts × 5
+devices) each push a 100-op batch once a minute for 5 minutes; it fails if the sync p95 exceeds
+800 ms or any request fails. It creates and verifies its own accounts, so the API must run with
+`E2E_MODE=true`. CI runs it weekly and on demand in `.github/workflows/perf.yml`; the result is
+posted as a run annotation and the k6 HTML report is uploaded as an artifact.
+
 ## Attachments and background jobs
 
 `docker compose up -d` also starts MinIO (S3 API on `localhost:9000`, console on `localhost:9001`, login `nexus` / `nexus-dev-secret`) and creates the `nexus-attachments-dev` bucket. MinIO no longer publishes community images to Docker Hub, so the compose file and the tests use Chainguard's `chainguard/minio` build.

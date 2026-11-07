@@ -19,5 +19,10 @@ export default tseslint.config(
       ],
     },
   },
+  {
+    // k6 scripts run in k6's JavaScript runtime, not Node.
+    files: ['scripts/k6/**/*.js'],
+    languageOptions: { globals: { __ENV: 'readonly', __VU: 'readonly', __ITER: 'readonly' } },
+  },
   prettier,
 );

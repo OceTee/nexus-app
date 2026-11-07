@@ -76,7 +76,7 @@
     "web": "expo start --web",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "test": "jest --coverage"
+    "test": "jest --coverage --coverageReporters=text-summary --coverageReporters=lcov --coverageReporters=json-summary"
   },
   "private": true
 }

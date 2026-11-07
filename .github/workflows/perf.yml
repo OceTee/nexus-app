@@ -1,0 +1,86 @@
+# T-62 sync load test (TDD Section L, Performance testing): k6 with 50 virtual
+# devices against the API in CI (Postgres and MinIO from docker compose). Until
+# staging exists (Phase 13) the numbers come from the CI runner, so they show
+# the API's own cost rather than Neon's network latency.
+name: Performance
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 3 * * 1'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/perf.yml'
+      - 'scripts/k6/**'
+
+concurrency:
+  group: perf-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  k6:
+    name: k6 sync load (T-62)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Start Postgres and MinIO
+        run: docker compose up -d --wait postgres minio && docker compose up minio-init
+
+      - name: Configure, migrate and build the API
+        working-directory: apps/api
+        run: |
+          cp .env.example .env
+          sed -i "s|^JWT_SECRET=.*|JWT_SECRET=$(openssl rand -base64 32 | tr '+/' '-_' | tr -d '=')|" .env
+          sed -i "s|^RATE_LIMIT_STORE=.*|RATE_LIMIT_STORE=memory|" .env
+          sed -i "s|^E2E_MODE=.*|E2E_MODE=true|" .env
+          sed -i "s|^LOG_LEVEL=.*|LOG_LEVEL=warn|" .env
+          pnpm db:migrate && pnpm build
+
+      - name: Start the API
+        working-directory: apps/api
+        run: |
+          nohup node --env-file=.env dist/index.js > "$RUNNER_TEMP/api.log" 2>&1 &
+          for i in $(seq 1 60); do curl -sf localhost:4000/readyz && break; sleep 2; done
+          curl -sf localhost:4000/readyz
+
+      - uses: grafana/setup-k6-action@v1
+
+      - name: Run the sync load test
+        env:
+          K6_WEB_DASHBOARD: 'true'
+          K6_WEB_DASHBOARD_EXPORT: k6-sync.html
+        run: k6 run -e API_URL=http://localhost:4000 scripts/k6/sync-load.js
+
+      - name: Report
+        if: always()
+        run: |
+          if [ -f k6-summary.txt ]; then
+            echo "::notice title=k6 sync (50 devices, 100 ops/min, 5 min)::$(cat k6-summary.txt)"
+            { echo '### k6 sync load'; echo; cat k6-summary.txt; } >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload the report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: k6-sync
+          path: |
+            k6-sync.html
+            k6-summary.json
+            ${{ runner.temp }}/api.log
+          retention-days: 30
