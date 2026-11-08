@@ -106,7 +106,12 @@ export type Env = z.infer<typeof EnvSchema>;
 
 /** Parses and validates the environment; throws a readable error on bad config. */
 export function loadEnv(source: NodeJS.ProcessEnv = process.env): Env {
-  const result = EnvSchema.safeParse(source);
+  // Hosting dashboards (Render, Railway) can keep a variable with an empty
+  // value; treat that as unset so defaults and optional settings still apply.
+  const cleaned = Object.fromEntries(
+    Object.entries(source).filter(([, v]) => v !== undefined && v.trim() !== ''),
+  );
+  const result = EnvSchema.safeParse(cleaned);
   if (!result.success) {
     throw new Error(`Invalid environment configuration:\n${z.prettifyError(result.error)}`);
   }

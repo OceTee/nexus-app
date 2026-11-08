@@ -23,6 +23,20 @@ describe('loadEnv guards', () => {
     );
   });
 
+  it('treats empty values as unset, as hosting dashboards can leave them', () => {
+    const env = loadEnv({
+      ...production,
+      APP_URL: '',
+      CORS_ORIGINS: '',
+      DATABASE_URL_MAINT: '',
+      BACKUP_AGE_RECIPIENT: '  ',
+      EXPO_ACCESS_TOKEN: '',
+    });
+    expect(env.APP_URL).toBe('http://localhost:8081');
+    expect(env.DATABASE_URL_MAINT).toBeUndefined();
+    expect(env.BACKUP_AGE_RECIPIENT).toBeUndefined();
+  });
+
   it('allows the multiplier outside production', () => {
     expect(loadEnv({ NODE_ENV: 'test', RATE_LIMIT_MULTIPLIER: '100' }).RATE_LIMIT_MULTIPLIER).toBe(
       100,
