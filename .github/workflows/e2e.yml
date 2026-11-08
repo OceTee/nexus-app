@@ -36,6 +36,7 @@ jobs:
       # LogBox) and the API reached through `adb reverse`.
       EXPO_PUBLIC_E2E: '1'
       EXPO_PUBLIC_API_URL: http://localhost:4000
+      MAESTRO_VERSION: 2.12.1
       # Slow CI emulators need longer than the 15 s default to start the driver.
       MAESTRO_DRIVER_STARTUP_TIMEOUT: '120000'
     steps:
@@ -90,21 +91,40 @@ jobs:
         working-directory: apps/mobile/android
         run: ./gradlew app:assembleRelease -PreactNativeArchitectures=x86_64 --console=plain
 
-      # A pinned release, downloaded with retries: the install script piped into
-      # bash reported success while installing nothing when GitHub's release
-      # downloads were timing out.
+      # A pinned Maestro, cached between runs. The install script piped into
+      # bash reported success while installing nothing when github.com release
+      # downloads were timing out, so the zip comes through the API asset route
+      # (which kept working), with the release link as a fallback.
+      - name: Cache Maestro
+        id: maestro-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/maestro
+          key: maestro-${{ env.MAESTRO_VERSION }}
+
       - name: Install Maestro
+        if: steps.maestro-cache.outputs.cache-hit != 'true'
         env:
-          MAESTRO_VERSION: 2.12.1
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          url="https://github.com/mobile-dev-inc/maestro/releases/download/cli-$MAESTRO_VERSION/maestro.zip"
+          repo=mobile-dev-inc/maestro
+          tag="cli-$MAESTRO_VERSION"
+          zip="$RUNNER_TEMP/maestro.zip"
+          auth=(-H "Authorization: Bearer $GH_TOKEN")
           for attempt in 1 2 3 4 5; do
-            curl -fsSL --retry 3 --retry-all-errors -o "$RUNNER_TEMP/maestro.zip" "$url" && break
+            id=$(curl -fsS "${auth[@]}" "https://api.github.com/repos/$repo/releases/tags/$tag" \
+              | jq -r '.assets[] | select(.name == "maestro.zip") | .id') || id=""
+            if [ -n "$id" ] && curl -fsSL "${auth[@]}" -H "Accept: application/octet-stream" \
+              -o "$zip" "https://api.github.com/repos/$repo/releases/assets/$id"; then break; fi
+            if curl -fsSL -o "$zip" "https://github.com/$repo/releases/download/$tag/maestro.zip"; then break; fi
             echo "Download attempt $attempt failed; retrying in 30 s"
             sleep 30
           done
-          unzip -q "$RUNNER_TEMP/maestro.zip" -d "$HOME"
+          unzip -q "$zip" -d "$HOME"
+
+      - name: Put Maestro on the path
+        run: |
           echo "$HOME/maestro/bin" >> "$GITHUB_PATH"
           "$HOME/maestro/bin/maestro" --version
 
