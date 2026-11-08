@@ -84,6 +84,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       './plugins/withCmakeVersion',
       './plugins/withE2ECleartext',
       './plugins/withReleaseSigning',
+      './plugins/withGwpAsanOff',
     ],
     experiments: { typedRoutes: true, reactCompiler: true },
     extra: { apiUrl: process.env.EXPO_PUBLIC_API_URL },
