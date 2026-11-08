@@ -113,14 +113,18 @@ for (const file of flows) {
   process.stdout.write(out);
   const passed = run.status === 0;
   // The failing step and Maestro's reason, for the summary and CI annotations.
+  const lines = out
+    .split(/\r?\n/)
+    .map((l) => l.trim())
+    .filter(Boolean);
+  const matched = lines.filter((l) =>
+    /FAILED|not visible|Assertion|Exception|Error|timed out|died|unable|refused/i.test(l),
+  );
+  // When Maestro fails before any step (driver, launch), show its last words.
   const reason = passed
     ? ''
-    : out
-        .split(/\r?\n/)
-        .map((l) => l.trim())
-        .filter((l) => /FAILED|not visible|Assertion|Exception|Error|timed out/i.test(l))
-        .slice(-4)
-        .join(' | ');
+    : (matched.length > 0 ? matched.slice(-4) : lines.slice(-4)).join(' | ') ||
+      `exit ${run.status ?? run.signal ?? '?'}${run.error ? `: ${run.error.message}` : ''}`;
   const screen = passed ? '' : screenText();
   if (!passed) console.log(`Screen at failure: ${screen}`);
   results.push({ file, status: passed ? 'passed' : 'FAILED', reason, screen });
