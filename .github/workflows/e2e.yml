@@ -90,10 +90,23 @@ jobs:
         working-directory: apps/mobile/android
         run: ./gradlew app:assembleRelease -PreactNativeArchitectures=x86_64 --console=plain
 
+      # A pinned release, downloaded with retries: the install script piped into
+      # bash reported success while installing nothing when GitHub's release
+      # downloads were timing out.
       - name: Install Maestro
+        env:
+          MAESTRO_VERSION: 2.12.1
         run: |
-          curl -fsSL https://get.maestro.mobile.dev | bash
-          echo "$HOME/.maestro/bin" >> "$GITHUB_PATH"
+          set -euo pipefail
+          url="https://github.com/mobile-dev-inc/maestro/releases/download/cli-$MAESTRO_VERSION/maestro.zip"
+          for attempt in 1 2 3 4 5; do
+            curl -fsSL --retry 3 --retry-all-errors -o "$RUNNER_TEMP/maestro.zip" "$url" && break
+            echo "Download attempt $attempt failed; retrying in 30 s"
+            sleep 30
+          done
+          unzip -q "$RUNNER_TEMP/maestro.zip" -d "$HOME"
+          echo "$HOME/maestro/bin" >> "$GITHUB_PATH"
+          "$HOME/maestro/bin/maestro" --version
 
       # --- Emulator + flows --------------------------------------------------
       - name: Enable KVM
