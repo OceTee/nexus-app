@@ -6,7 +6,11 @@ name: T-54 Biometric lock
 tags: [manual]
 ---
 - runFlow: ../subflows/start-offline.yaml
-- tapOn: 'Settings'
+- runFlow:
+    file: ../subflows/go-to-tab.yaml
+    env:
+      TAB: 'Settings'
+      EXPECT: 'Trash'
 - tapOn: 'Security, App lock'
 - tapOn:
     id: 'app-lock-switch'

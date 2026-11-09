@@ -9,12 +9,20 @@ tags: [offline]
     env:
       TITLE: 'Quarterly review'
       BODY: 'Numbers and next steps.'
-- tapOn: 'Collections'
+- runFlow:
+    file: ../subflows/go-to-tab.yaml
+    env:
+      TAB: 'Collections'
+      EXPECT: 'New collection'
 - tapOn: 'New collection'
 - inputText: 'Work'
 - pressKey: Enter
 - assertVisible: 'Work'
-- tapOn: 'Notes'
+- runFlow:
+    file: ../subflows/go-to-tab.yaml
+    env:
+      TAB: 'Notes'
+      EXPECT: 'New note'
 - longPressOn: 'Quarterly review'
 - tapOn: 'Move to collection'
 - tapOn: 'Work'

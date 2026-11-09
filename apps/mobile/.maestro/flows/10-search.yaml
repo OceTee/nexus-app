@@ -9,7 +9,11 @@ tags: [offline]
     env:
       TITLE: 'Garden plan'
       BODY: 'Plant the zucchini after the frost.'
-- tapOn: 'Search'
+- runFlow:
+    file: ../subflows/go-to-tab.yaml
+    env:
+      TAB: 'Search'
+      EXPECT: 'Search notes'
 - tapOn:
     id: 'search-input'
 - inputText: 'zucchini'

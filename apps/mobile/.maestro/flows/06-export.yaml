@@ -9,7 +9,11 @@ tags: [offline]
     env:
       TITLE: 'Exported note'
       BODY: 'Goes into the bundle.'
-- tapOn: 'Settings'
+- runFlow:
+    file: ../subflows/go-to-tab.yaml
+    env:
+      TAB: 'Settings'
+      EXPECT: 'Trash'
 - tapOn: 'Export, Markdown bundle or JSON'
 - assertVisible: '1 note.*'
 # By id: the screen header also reads "Export".

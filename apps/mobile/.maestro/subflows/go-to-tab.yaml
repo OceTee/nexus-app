@@ -1,0 +1,16 @@
+# Switches to a bottom tab and waits until that tab's screen is showing.
+# Params: TAB (the tab label) and EXPECT (text only that screen shows).
+#
+# On a slow emulator a tap on the tab bar can land while the previous
+# screen's transition or a closing sheet is still animating, and the tap is
+# lost; so wait for animations, then tap and retry until EXPECT appears.
+appId: com.gladprosper.nexus.development
+---
+- waitForAnimationToEnd
+- retry:
+    maxRetries: 3
+    commands:
+      - tapOn: ${TAB}
+      - extendedWaitUntil:
+          visible: ${EXPECT}
+          timeout: 5000
