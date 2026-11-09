@@ -22,11 +22,23 @@ export function useLocalQuery<T>(
 
   useEffect(() => {
     let alive = true;
-    const load = () =>
-      queryRef.current().then(
-        (v) => alive && setData(v),
-        (e: unknown) => alive && setError(e),
+    // Writes in quick succession start overlapping loads; only the newest may
+    // set state, or an older, slower load would put stale data back.
+    let latest = 0;
+    const load = () => {
+      const mine = ++latest;
+      const current = () => alive && mine === latest;
+      return queryRef.current().then(
+        (v) => {
+          if (!current()) return;
+          setData(v);
+          setError(null);
+        },
+        (e: unknown) => {
+          if (current()) setError(e);
+        },
       );
+    };
     void load();
     const off = events.on(tableKey.split(',') as Table[], () => void load());
     return () => {
