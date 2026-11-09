@@ -29,7 +29,7 @@ permissions:
 jobs:
   maestro:
     name: Stage 6 - E2E (Maestro, Android emulator)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 100
     env:
       APP_ENV: development
@@ -42,21 +42,21 @@ jobs:
       # Slow CI emulators need longer than the 15 s default to start the driver.
       MAESTRO_DRIVER_STARTUP_TIMEOUT: '120000'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v6
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: 24
           cache: pnpm
 
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: 17
 
-      - uses: gradle/actions/setup-gradle@v4
+      - uses: gradle/actions/setup-gradle@v6
 
       - run: pnpm install --frozen-lockfile
 
@@ -99,7 +99,7 @@ jobs:
       # (which kept working), with the release link as a fallback.
       - name: Cache Maestro
         id: maestro-cache
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ~/maestro
           key: maestro-${{ env.MAESTRO_VERSION }}
@@ -155,7 +155,7 @@ jobs:
 
       - name: Upload Maestro results and logs
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: e2e-results
           path: |
