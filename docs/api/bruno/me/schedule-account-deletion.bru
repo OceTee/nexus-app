@@ -1,0 +1,27 @@
+meta {
+  name: Schedule account deletion
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{baseUrl}}/v1/me/deletion
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+body:json {
+  {
+    "password": "{{password}}"
+  }
+}
+
+docs {
+  POST /v1/me/deletion (operationId: postMeDeletion)
+
+  Responses: 200, 400, 401, 429, default
+}

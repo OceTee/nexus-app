@@ -1,0 +1,28 @@
+meta {
+  name: Create a collection
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/v1/collections
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+body:json {
+  {
+    "id": "01900000-0000-7000-8000-000000000001",
+    "name": "Bruno"
+  }
+}
+
+docs {
+  POST /v1/collections (operationId: postCollections)
+
+  Responses: 201, 400, 401, 429, default
+}

@@ -1,0 +1,21 @@
+meta {
+  name: Recent exports
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/v1/exports
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+docs {
+  GET /v1/exports (operationId: getExports)
+
+  Responses: 200, 401, 429, default
+}

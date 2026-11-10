@@ -1,0 +1,25 @@
+meta {
+  name: A collection
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/v1/collections/:collectionId
+  body: none
+  auth: bearer
+}
+
+params:path {
+  collectionId: 01900000-0000-7000-8000-000000000001
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+docs {
+  GET /v1/collections/{collectionId} (operationId: getCollectionsByCollectionId)
+
+  Responses: 200, 400, 401, 429, default
+}

@@ -1,0 +1,32 @@
+meta {
+  name: Rename a device or update its push token
+  type: http
+  seq: 3
+}
+
+patch {
+  url: {{baseUrl}}/v1/devices/:deviceId
+  body: json
+  auth: bearer
+}
+
+params:path {
+  deviceId: 01900000-0000-7000-8000-000000000001
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+body:json {
+  {
+    "name": "Bruno",
+    "pushToken": "string"
+  }
+}
+
+docs {
+  PATCH /v1/devices/{deviceId} (operationId: patchDevicesByDeviceId)
+
+  Responses: 200, 400, 401, 429, default
+}

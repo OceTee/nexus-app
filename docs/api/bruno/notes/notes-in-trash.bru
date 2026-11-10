@@ -1,0 +1,26 @@
+meta {
+  name: Notes in Trash
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/v1/notes/trash
+  body: none
+  auth: bearer
+}
+
+params:query {
+  ~cursor: 
+  ~limit: 50
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+docs {
+  GET /v1/notes/trash (operationId: getNotesTrash)
+
+  Responses: 200, 400, 401, 429, default
+}

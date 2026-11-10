@@ -1,0 +1,35 @@
+meta {
+  name: Resolve the conflicts
+  type: http
+  seq: 14
+}
+
+post {
+  url: {{baseUrl}}/v1/notes/:noteId/conflicts/:versionId/resolve
+  body: json
+  auth: bearer
+}
+
+params:path {
+  noteId: 01900000-0000-7000-8000-000000000001
+  versionId: 01900000-0000-7000-8000-000000000001
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+body:json {
+  {
+    "strategy": "keep_server",
+    "title": "Hello from Bruno",
+    "bodyMd": "Written from the API client. See [[Another note]].",
+    "baseRev": 1
+  }
+}
+
+docs {
+  POST /v1/notes/{noteId}/conflicts/{versionId}/resolve (operationId: postNotesByNoteIdConflictsByVersionIdResolve)
+
+  Responses: 200, 400, 401, 429, default
+}

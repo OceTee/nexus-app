@@ -1,0 +1,25 @@
+meta {
+  name: Export status
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/v1/exports/:exportId
+  body: none
+  auth: bearer
+}
+
+params:path {
+  exportId: 01900000-0000-7000-8000-000000000001
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+docs {
+  GET /v1/exports/{exportId} (operationId: getExportsByExportId)
+
+  Responses: 200, 400, 401, 429, default
+}

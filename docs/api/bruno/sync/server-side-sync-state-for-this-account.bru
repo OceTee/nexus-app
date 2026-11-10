@@ -1,0 +1,21 @@
+meta {
+  name: Server-side sync state for this account
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/v1/sync/status
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+docs {
+  GET /v1/sync/status (operationId: getSyncStatus)
+
+  Responses: 200, 401, 429, default
+}

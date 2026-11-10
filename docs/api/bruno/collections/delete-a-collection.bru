@@ -1,0 +1,31 @@
+meta {
+  name: Delete a collection
+  type: http
+  seq: 5
+}
+
+delete {
+  url: {{baseUrl}}/v1/collections/:collectionId
+  body: json
+  auth: bearer
+}
+
+params:path {
+  collectionId: 01900000-0000-7000-8000-000000000001
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+body:json {
+  {
+    "baseRev": 0
+  }
+}
+
+docs {
+  DELETE /v1/collections/{collectionId} (operationId: deleteCollectionsByCollectionId)
+
+  Responses: 204, 400, 401, 429, default
+}

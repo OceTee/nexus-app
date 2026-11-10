@@ -1,0 +1,31 @@
+meta {
+  name: Move a note to Trash
+  type: http
+  seq: 6
+}
+
+delete {
+  url: {{baseUrl}}/v1/notes/:noteId
+  body: json
+  auth: bearer
+}
+
+params:path {
+  noteId: 01900000-0000-7000-8000-000000000001
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+body:json {
+  {
+    "baseRev": 0
+  }
+}
+
+docs {
+  DELETE /v1/notes/{noteId} (operationId: deleteNotesByNoteId)
+
+  Responses: 204, 400, 401, 429, default
+}

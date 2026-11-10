@@ -1,0 +1,21 @@
+meta {
+  name: Signed-in devices
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/v1/devices
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+docs {
+  GET /v1/devices (operationId: getDevices)
+
+  Responses: 200, 401, 429, default
+}

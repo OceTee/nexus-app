@@ -1,0 +1,25 @@
+meta {
+  name: Restore a note from Trash
+  type: http
+  seq: 7
+}
+
+post {
+  url: {{baseUrl}}/v1/notes/:noteId/restore
+  body: none
+  auth: bearer
+}
+
+params:path {
+  noteId: 01900000-0000-7000-8000-000000000001
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+docs {
+  POST /v1/notes/{noteId}/restore (operationId: postNotesByNoteIdRestore)
+
+  Responses: 200, 400, 401, 429, default
+}

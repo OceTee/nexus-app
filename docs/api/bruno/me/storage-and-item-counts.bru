@@ -1,0 +1,21 @@
+meta {
+  name: Storage and item counts
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/v1/me/usage
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+docs {
+  GET /v1/me/usage (operationId: getMeUsage)
+
+  Responses: 200, 401, 429, default
+}

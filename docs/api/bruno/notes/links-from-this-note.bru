@@ -1,0 +1,25 @@
+meta {
+  name: Links from this note
+  type: http
+  seq: 12
+}
+
+get {
+  url: {{baseUrl}}/v1/notes/:noteId/links
+  body: none
+  auth: bearer
+}
+
+params:path {
+  noteId: 01900000-0000-7000-8000-000000000001
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+docs {
+  GET /v1/notes/{noteId}/links (operationId: getNotesByNoteIdLinks)
+
+  Responses: 200, 400, 401, 429, default
+}

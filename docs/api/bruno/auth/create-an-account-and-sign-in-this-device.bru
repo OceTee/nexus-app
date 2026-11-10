@@ -1,0 +1,37 @@
+meta {
+  name: Create an account and sign in this device
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/v1/auth/register
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "email": "{{email}}",
+    "password": "{{password}}",
+    "device": {
+      "id": "{{deviceId}}",
+      "name": "Bruno",
+      "platform": "android",
+      "appVersion": "1.0.1"
+    }
+  }
+}
+
+script:post-response {
+  if (res.status < 300) {
+    bru.setEnvVar("accessToken", res.body.accessToken);
+    bru.setEnvVar("refreshToken", res.body.refreshToken);
+  }
+}
+
+docs {
+  POST /v1/auth/register (operationId: postAuthRegister)
+
+  Responses: 201, 400, 429, default
+}

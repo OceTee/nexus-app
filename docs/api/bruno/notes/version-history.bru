@@ -1,0 +1,30 @@
+meta {
+  name: Version history
+  type: http
+  seq: 8
+}
+
+get {
+  url: {{baseUrl}}/v1/notes/:noteId/versions
+  body: none
+  auth: bearer
+}
+
+params:query {
+  ~cursor: 
+  ~limit: 50
+}
+
+params:path {
+  noteId: 01900000-0000-7000-8000-000000000001
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+docs {
+  GET /v1/notes/{noteId}/versions (operationId: getNotesByNoteIdVersions)
+
+  Responses: 200, 400, 401, 429, default
+}

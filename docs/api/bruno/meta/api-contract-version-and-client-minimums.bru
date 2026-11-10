@@ -1,0 +1,17 @@
+meta {
+  name: API contract version and client minimums
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/v1/meta
+  body: none
+  auth: none
+}
+
+docs {
+  GET /v1/meta (operationId: getMeta)
+
+  Responses: 200, 429, default
+}

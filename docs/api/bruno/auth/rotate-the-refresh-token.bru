@@ -1,0 +1,31 @@
+meta {
+  name: Rotate the refresh token
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/v1/auth/refresh
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "refreshToken": "{{refreshToken}}",
+    "deviceId": "{{deviceId}}"
+  }
+}
+
+script:post-response {
+  if (res.status < 300) {
+    bru.setEnvVar("accessToken", res.body.accessToken);
+    bru.setEnvVar("refreshToken", res.body.refreshToken);
+  }
+}
+
+docs {
+  POST /v1/auth/refresh (operationId: postAuthRefresh)
+
+  Responses: 200, 400, 429, default
+}

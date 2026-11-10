@@ -1,0 +1,31 @@
+meta {
+  name: Rename a collection
+  type: http
+  seq: 4
+}
+
+patch {
+  url: {{baseUrl}}/v1/collections/:collectionId
+  body: json
+  auth: bearer
+}
+
+params:path {
+  collectionId: 01900000-0000-7000-8000-000000000001
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+body:json {
+  {
+    "baseRev": 1
+  }
+}
+
+docs {
+  PATCH /v1/collections/{collectionId} (operationId: patchCollectionsByCollectionId)
+
+  Responses: 200, 400, 401, 429, default
+}

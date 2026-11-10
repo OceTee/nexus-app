@@ -1,0 +1,27 @@
+meta {
+  name: Attachments
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/v1/attachments
+  body: none
+  auth: bearer
+}
+
+params:query {
+  ~cursor: 
+  ~limit: 50
+  ~noteId: 01900000-0000-7000-8000-000000000001
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+docs {
+  GET /v1/attachments (operationId: getAttachments)
+
+  Responses: 200, 400, 401, 429, default
+}

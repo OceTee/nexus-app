@@ -1,0 +1,27 @@
+meta {
+  name: Sign out this device
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{baseUrl}}/v1/auth/logout
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+body:json {
+  {
+    "refreshToken": "{{refreshToken}}"
+  }
+}
+
+docs {
+  POST /v1/auth/logout (operationId: postAuthLogout)
+
+  Responses: 204, 400, 401, 429, default
+}

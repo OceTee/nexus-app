@@ -1,0 +1,21 @@
+meta {
+  name: Sign out every device
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{baseUrl}}/v1/auth/logout-all
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+docs {
+  POST /v1/auth/logout-all (operationId: postAuthLogoutAll)
+
+  Responses: 204, 401, 429, default
+}

@@ -1,0 +1,21 @@
+meta {
+  name: Send the verification email again
+  type: http
+  seq: 7
+}
+
+post {
+  url: {{baseUrl}}/v1/auth/resend-verification
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+docs {
+  POST /v1/auth/resend-verification (operationId: postAuthResendVerification)
+
+  Responses: 202, 401, 429, default
+}

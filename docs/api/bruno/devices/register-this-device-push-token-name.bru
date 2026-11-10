@@ -1,0 +1,30 @@
+meta {
+  name: Register this device (push token, name)
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/v1/devices
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+body:json {
+  {
+    "id": "01900000-0000-7000-8000-000000000001",
+    "name": "Bruno",
+    "platform": "android",
+    "appVersion": "1.0.1"
+  }
+}
+
+docs {
+  POST /v1/devices (operationId: postDevices)
+
+  Responses: 200, 400, 401, 429, default
+}

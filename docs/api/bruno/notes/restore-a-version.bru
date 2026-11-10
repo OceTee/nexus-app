@@ -1,0 +1,32 @@
+meta {
+  name: Restore a version
+  type: http
+  seq: 10
+}
+
+post {
+  url: {{baseUrl}}/v1/notes/:noteId/versions/:versionId/restore
+  body: json
+  auth: bearer
+}
+
+params:path {
+  noteId: 01900000-0000-7000-8000-000000000001
+  versionId: 01900000-0000-7000-8000-000000000001
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+body:json {
+  {
+    "baseRev": 0
+  }
+}
+
+docs {
+  POST /v1/notes/{noteId}/versions/{versionId}/restore (operationId: postNotesByNoteIdVersionsByVersionIdRestore)
+
+  Responses: 200, 400, 401, 429, default
+}

@@ -1,0 +1,17 @@
+meta {
+  name: Readiness probe (503 when not ready)
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/readyz
+  body: none
+  auth: none
+}
+
+docs {
+  GET /readyz (operationId: getReadyz)
+
+  Responses: 200, 429, default
+}

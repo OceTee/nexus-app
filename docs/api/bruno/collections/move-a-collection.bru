@@ -1,0 +1,31 @@
+meta {
+  name: Move a collection
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{baseUrl}}/v1/collections/:collectionId/move
+  body: json
+  auth: bearer
+}
+
+params:path {
+  collectionId: 01900000-0000-7000-8000-000000000001
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+body:json {
+  {
+    "parentId": "01900000-0000-7000-8000-000000000001"
+  }
+}
+
+docs {
+  POST /v1/collections/{collectionId}/move (operationId: postCollectionsByCollectionIdMove)
+
+  Responses: 200, 400, 401, 429, default
+}

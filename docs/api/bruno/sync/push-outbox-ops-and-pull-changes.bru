@@ -1,0 +1,45 @@
+meta {
+  name: Push outbox ops and pull changes
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/v1/sync
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+body:json {
+  {
+    "deviceId": "{{deviceId}}",
+    "cursor": 0,
+    "ops": [
+      {
+        "opId": "01900000-0000-7000-8000-0000000000aa",
+        "createdAt": "2026-01-01T09:00:00.000Z",
+        "entityId": "01900000-0000-7000-8000-000000000001",
+        "baseRev": 0,
+        "type": "note.upsert",
+        "payload": {
+          "title": "Hello from Bruno",
+          "bodyMd": "Written from the API client. See [[Another note]].",
+          "collectionId": null,
+          "isPinned": false,
+          "tagIds": []
+        }
+      }
+    ],
+    "clientSchema": 1
+  }
+}
+
+docs {
+  POST /v1/sync (operationId: postSync)
+
+  Responses: 200, 400, 401, 429, default
+}

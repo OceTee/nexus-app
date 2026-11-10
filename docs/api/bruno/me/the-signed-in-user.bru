@@ -1,0 +1,21 @@
+meta {
+  name: The signed-in user
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/v1/me
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+docs {
+  GET /v1/me (operationId: getMe)
+
+  Responses: 200, 401, 429, default
+}

@@ -1,0 +1,31 @@
+meta {
+  name: Knowledge graph
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/v1/graph
+  body: none
+  auth: bearer
+}
+
+params:query {
+  ~collectionId: 01900000-0000-7000-8000-000000000001
+  ~tagIds: string
+  ~from: 2026-01-01T09:00:00.000Z
+  ~to: 2026-01-01T09:00:00.000Z
+  ~includeTagEdges: 0
+  ~orphans: 0
+  ~limit: 500
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+docs {
+  GET /v1/graph (operationId: getGraph)
+
+  Responses: 200, 400, 401, 429, default
+}

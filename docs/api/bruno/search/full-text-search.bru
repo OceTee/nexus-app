@@ -1,0 +1,29 @@
+meta {
+  name: Full-text search
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/v1/search?q=kalman
+  body: none
+  auth: bearer
+}
+
+params:query {
+  ~cursor: 
+  ~limit: 50
+  q: kalman
+  ~collectionId: 01900000-0000-7000-8000-000000000001
+  ~tagId: 01900000-0000-7000-8000-000000000001
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+docs {
+  GET /v1/search (operationId: getSearch)
+
+  Responses: 200, 400, 401, 429, default
+}

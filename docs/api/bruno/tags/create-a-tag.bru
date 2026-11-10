@@ -1,0 +1,28 @@
+meta {
+  name: Create a tag
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/v1/tags
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+body:json {
+  {
+    "id": "01900000-0000-7000-8000-000000000001",
+    "name": "Bruno"
+  }
+}
+
+docs {
+  POST /v1/tags (operationId: postTags)
+
+  Responses: 201, 400, 401, 429, default
+}

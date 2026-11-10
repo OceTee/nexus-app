@@ -1,0 +1,25 @@
+meta {
+  name: Short-lived download URL
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{baseUrl}}/v1/exports/:exportId/download
+  body: none
+  auth: bearer
+}
+
+params:path {
+  exportId: 01900000-0000-7000-8000-000000000001
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+docs {
+  GET /v1/exports/{exportId}/download (operationId: getExportsByExportIdDownload)
+
+  Responses: 200, 400, 401, 429, default
+}

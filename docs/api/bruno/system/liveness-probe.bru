@@ -1,0 +1,17 @@
+meta {
+  name: Liveness probe
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/healthz
+  body: none
+  auth: none
+}
+
+docs {
+  GET /healthz (operationId: getHealthz)
+
+  Responses: 200, 429, default
+}

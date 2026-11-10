@@ -1,0 +1,23 @@
+meta {
+  name: Confirm the email address
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{baseUrl}}/v1/auth/verify-email
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "token": "token-from-the-email-link"
+  }
+}
+
+docs {
+  POST /v1/auth/verify-email (operationId: postAuthVerifyEmail)
+
+  Responses: 200, 400, 429, default
+}

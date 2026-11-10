@@ -1,0 +1,26 @@
+meta {
+  name: Tag a note
+  type: http
+  seq: 16
+}
+
+post {
+  url: {{baseUrl}}/v1/notes/:noteId/tags/:tagId
+  body: none
+  auth: bearer
+}
+
+params:path {
+  noteId: 01900000-0000-7000-8000-000000000001
+  tagId: 01900000-0000-7000-8000-000000000001
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+docs {
+  POST /v1/notes/{noteId}/tags/{tagId} (operationId: postNotesByNoteIdTagsByTagId)
+
+  Responses: 200, 400, 401, 429, default
+}

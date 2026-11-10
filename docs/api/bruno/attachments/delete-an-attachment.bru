@@ -1,0 +1,25 @@
+meta {
+  name: Delete an attachment
+  type: http
+  seq: 5
+}
+
+delete {
+  url: {{baseUrl}}/v1/attachments/:attachmentId
+  body: none
+  auth: bearer
+}
+
+params:path {
+  attachmentId: 01900000-0000-7000-8000-000000000001
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+docs {
+  DELETE /v1/attachments/{attachmentId} (operationId: deleteAttachmentsByAttachmentId)
+
+  Responses: 204, 400, 401, 429, default
+}
