@@ -26,6 +26,13 @@ describe('app config', () => {
     expect(config('development').name).toBe('NEXUS (development)');
   });
 
+  it('derives a growing Android versionCode from the version', () => {
+    const c = config('production');
+    const [major, minor, patch] = c.version!.split('.').map(Number);
+    expect(c.android?.versionCode).toBe(major! * 10_000 + minor! * 100 + patch!);
+    expect(c.android?.versionCode).toBeGreaterThan(1); // 1.0.0 shipped as versionCode 1
+  });
+
   it('enables FTS, embeds the fonts and keeps the CMake pin plugin', () => {
     const plugins = JSON.stringify(config('development').plugins);
     expect(plugins).toContain('"enableFTS":true');

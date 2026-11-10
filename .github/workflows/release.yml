@@ -50,6 +50,16 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
+      - name: Check the tag matches the app version
+        if: github.ref_type == 'tag'
+        working-directory: apps/mobile
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          if [ "v$VERSION" != "$GITHUB_REF_NAME" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match the app version $VERSION (apps/mobile/package.json and app.config.ts)."
+            exit 1
+          fi
+
       - name: Generate the Android project
         working-directory: apps/mobile
         run: npx expo prebuild --platform android --no-install

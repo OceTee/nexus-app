@@ -14,6 +14,18 @@ const fonts = [
   'JetBrainsMono-Medium',
 ].map((name) => `./assets/fonts/${name}.ttf`);
 
+/** The app version; release tags (vX.Y.Z) must match it. */
+const VERSION = '1.0.1';
+
+/**
+ * Android's versionCode must grow with every release: 1.0.1 → 10001,
+ * 1.2.3 → 10203 (minor and patch each stay below 100).
+ */
+const versionCode = (v: string) => {
+  const [major = 0, minor = 0, patch = 0] = v.split('.').map(Number);
+  return major * 10_000 + minor * 100 + patch;
+};
+
 export default ({ config }: ConfigContext): ExpoConfig => {
   const profile = process.env.APP_ENV ?? 'development';
   const suffix = profile === 'production' ? '' : `.${profile}`;
@@ -21,7 +33,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     ...config,
     name: profile === 'production' ? 'NEXUS' : `NEXUS (${profile})`,
     slug: 'nexus',
-    version: '1.0.0',
+    version: VERSION,
     runtimeVersion: { policy: 'appVersion' },
     scheme: 'nexus',
     orientation: 'default',
@@ -38,6 +50,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     },
     android: {
       package: `com.gladprosper.nexus${suffix}`,
+      versionCode: versionCode(VERSION),
       adaptiveIcon: {
         foregroundImage: './assets/images/android-icon-foreground.png',
         backgroundImage: './assets/images/android-icon-background.png',
