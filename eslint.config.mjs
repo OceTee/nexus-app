@@ -20,6 +20,11 @@ export default tseslint.config(
     },
   },
   {
+    // The GitHub Pages site (site/) runs in the browser.
+    files: ['site/**/*.js'],
+    languageOptions: { globals: { ...globals.browser } },
+  },
+  {
     // k6 scripts run in k6's JavaScript runtime, not Node.
     files: ['scripts/k6/**/*.js'],
     languageOptions: { globals: { __ENV: 'readonly', __VU: 'readonly', __ITER: 'readonly' } },

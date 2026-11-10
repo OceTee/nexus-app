@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="referrer" content="no-referrer" />
+    <meta name="robots" content="noindex" />
+    <title>Choose a new password · NEXUS</title>
+    <link rel="stylesheet" href="../style.css" />
+  </head>
+  <body data-action="reset">
+    <main>
+      <div class="brand">NEXUS</div>
+      <h1>Choose a new password</h1>
+
+      <div id="ready" class="hidden">
+        <p>Tap below to set a new password in the NEXUS app on this phone.</p>
+        <div class="card">
+          <a id="open" class="button" href="#">Open in NEXUS</a>
+          <button id="copy" class="button secondary" type="button">Copy this link</button>
+        </div>
+        <p>
+          If the app doesn't open, copy the link, open NEXUS and paste it on the
+          <strong>Choose a new password</strong> screen.
+        </p>
+      </div>
+
+      <div id="missing" class="hidden card">
+        <p>
+          This link is missing its code. Open the newest email from NEXUS and tap its link again.
+        </p>
+      </div>
+
+      <footer><a href="../">About NEXUS</a></footer>
+    </main>
+    <script src="../open-app.js"></script>
+  </body>
+</html>

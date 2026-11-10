@@ -396,8 +396,17 @@ export class AuthService {
   }
 
   private link(path: 'verify' | 'reset', token: string): string {
-    const url = new URL(`/${path}`, this.d.appUrl);
-    url.searchParams.set('token', token);
-    return url.toString();
+    return emailLink(this.d.appUrl, path, token);
   }
+}
+
+/**
+ * The link in verification and reset emails: APP_URL + path + token. Joined
+ * relative to APP_URL so a site under a path (GitHub Pages serves
+ * https://user.github.io/repo) keeps it.
+ */
+export function emailLink(appUrl: string, path: 'verify' | 'reset', token: string): string {
+  const url = new URL(path, appUrl.endsWith('/') ? appUrl : `${appUrl}/`);
+  url.searchParams.set('token', token);
+  return url.toString();
 }
