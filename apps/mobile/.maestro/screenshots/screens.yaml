@@ -17,7 +17,7 @@ appId: com.gladprosper.nexus.development
 - tapOn: 'Edit'
 - waitForAnimationToEnd
 - takeScreenshot: screenshots/${THEME}-02-editor
-- hideKeyboard
+# No hideKeyboard here: with no keyboard open, Android treats it as Back.
 - tapOn: 'Read'
 - waitForAnimationToEnd
 - takeScreenshot: screenshots/${THEME}-03-reading

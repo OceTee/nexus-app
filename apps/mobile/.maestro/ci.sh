@@ -24,7 +24,7 @@ adb shell settings put global sysui_demo_allowed 1
 adb shell am broadcast -a com.android.systemui.demo -e command enter >/dev/null
 adb shell am broadcast -a com.android.systemui.demo -e command clock -e hhmm 0941 >/dev/null
 adb shell am broadcast -a com.android.systemui.demo -e command battery -e level 100 -e plugged false >/dev/null
-adb shell am broadcast -a com.android.systemui.demo -e command network -e wifi show -e level 4 >/dev/null
+adb shell am broadcast -a com.android.systemui.demo -e command network -e wifi show -e level 4 -e fully true >/dev/null
 adb shell am broadcast -a com.android.systemui.demo -e command notifications -e visible false >/dev/null
 adb shell pm clear "$app" >/dev/null
 for perm in android.permission.POST_NOTIFICATIONS android.permission.READ_MEDIA_IMAGES; do
@@ -35,6 +35,8 @@ mkdir -p screenshots
 maestro --device emulator-5554 test .maestro/screenshots/capture.yaml ||
   echo "::warning title=Screenshots::The screenshot flow did not finish; see the e2e-results artifact."
 adb shell am broadcast -a com.android.systemui.demo -e command exit >/dev/null || true
+# Maestro writes takeScreenshot images into its own results folder.
+find "$HOME/.maestro/tests" -path '*takeScreenshot*' -name '*.png' -exec cp {} screenshots/ \;
 echo "Screenshots: $(ls screenshots | wc -l) files"
 
 exit "$suite"
