@@ -9,7 +9,8 @@ same container image runs on either (see [Moving to Railway](#moving-to-railway)
 | API and workers         | [Render](https://render.com) web service, Docker                 | `apps/api/Dockerfile`, configured by `render.yaml`           |
 | Database                | [Neon](https://neon.tech) PostgreSQL                             | `main` branch for production, `staging` branch for staging   |
 | Attachments and backups | [Backblaze B2](https://www.backblaze.com/cloud-storage) (S3 API) | or Cloudflare R2, which needs a payment method on file       |
-| Email                   | [Resend](https://resend.com)                                     | verification, reset and security emails                      |
+| Email                   | [Brevo](https://www.brevo.com) (or Resend)                       | verification, reset and security emails                      |
+| Web pages               | GitHub Pages                                                     | `site/`: APK download and the pages email links open         |
 | Keep-awake and uptime   | [UptimeRobot](https://uptimerobot.com)                           | pings `/healthz` every 5 minutes                             |
 | Android app             | GitHub Actions + GitHub Releases                                 | `.github/workflows/release.yml` builds and publishes the APK |
 
@@ -23,8 +24,10 @@ Nothing here needs a credit card except Cloudflare R2.
 - **Neon free**: 0.5 GB of storage per project, compute that suspends when idle (the first
   query after a pause takes a moment).
 - **Backblaze B2**: 10 GB stored free; downloads free up to 3× the stored amount a day.
-- **Resend free**: 3,000 emails a month, 100 a day. Until you verify a domain you own, Resend
-  only delivers to your own sign-up address, so other people can't confirm their accounts.
+- **Brevo free**: 300 emails a day, sent from one address you verify (a Gmail address works; no
+  domain needed). Mail from a free address through a third party lands in spam more often.
+- **Resend free** (alternative): 3,000 emails a month, but until you verify a domain you own it
+  only delivers to your own sign-up address.
 
 ## 1. Database (Neon)
 
@@ -57,11 +60,25 @@ These become `R2_ENDPOINT=https://s3.<region>.backblazeb2.com`, `R2_REGION=<regi
 The variable names say R2 because Cloudflare R2 is the TDD's default; any S3-compatible store
 works.
 
-## 3. Email (Resend)
+## 3. Email (Brevo, free)
 
-Create an API key with **sending access** → `RESEND_API_KEY`. Without a verified domain, set
-`MAIL_FROM` to `NEXUS <onboarding@resend.dev>`. With a domain, verify it in Resend and use an
-address on it.
+1. Create a free Brevo account. In **Senders, domains & dedicated IPs → Senders**, add the
+   address emails should come from (e.g. your Gmail) and confirm it from your inbox.
+2. In **SMTP & API → API keys**, create an API key → `BREVO_API_KEY`.
+3. Set `MAIL_FROM` to `NEXUS <the address you verified>`.
+
+Brevo is used whenever `BREVO_API_KEY` is set. Resend still works instead
+(`RESEND_API_KEY`, with `MAIL_FROM` `NEXUS <onboarding@resend.dev>` until you own a domain), and
+with neither key the API only logs emails.
+
+## 3b. Web pages (GitHub Pages, free)
+
+`site/` holds the landing page and the `/verify` and `/reset` pages that email links open; they
+hand the link to the app. `.github/workflows/pages.yml` publishes it.
+
+1. In GitHub: **Settings → Pages → Build and deployment → Source: GitHub Actions**.
+2. Run **Actions → Pages → Run workflow** once (later pushes to `site/` publish on their own).
+3. In Render, set `APP_URL` to `https://ocetee.github.io/nexus-app` so email links point there.
 
 ## 4. API (Render)
 
@@ -131,10 +148,27 @@ Create a service from the repo with the Dockerfile `apps/api/Dockerfile` (build 
 root), set the same variables, and either keep `MIGRATE_ON_START=true` or run
 `node dist/migrate.js` as the pre-deploy command. Health check path: `/readyz`.
 
-## Not covered yet
+## Demo account (optional)
+
+Set `DEMO_PASSWORD` in Render (12 characters or more) and a nightly job (05:30 UTC) restores
+`demo@nexus.example` with its sample notes, so visitors can try sync without signing up. Leave it
+empty to turn the demo account off.
+
+## Encrypted nightly backups (optional)
+
+The `backup.dump` job (01:00 UTC) runs `pg_dump`, encrypts the dump with
+[age](https://age-encryption.org) and stores it in the attachments bucket under `backups/`. Set
+`BACKUP_AGE_RECIPIENT` to the public key (`age1…`); keep the private key offline, since it is
+the only way to read a backup:
+
+```bash
+age --decrypt -i nexus-backup-age.key nexus-YYYY-MM-DD.dump.age > nexus.dump
+pg_restore --no-owner -d "$DATABASE_URL_DIRECT" nexus.dump
+```
+
+## Not covered
 
 - **Push notifications** need an Expo project (`EXPO_ACCESS_TOKEN`, EAS project id) and
-  Firebase Cloud Messaging credentials for Android. The app works fully without push.
-- **Encrypted nightly backups** need an [age](https://age-encryption.org) key pair: the public
-  key goes in `BACKUP_AGE_RECIPIENT`; keep the private key offline.
-- **iOS** builds need a Mac or EAS with an Apple developer account.
+  Firebase Cloud Messaging credentials for Android; both are free. The app works fully without
+  push.
+- **iOS** isn't built: it needs a Mac or a paid Apple developer account.

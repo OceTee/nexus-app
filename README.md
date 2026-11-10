@@ -193,9 +193,11 @@ Setup instructions, scripts and Windows notes are in [docs/DEVELOPMENT.md](docs/
 ## Documentation
 
 - [Development guide](docs/DEVELOPMENT.md): setup, scripts, testing and Windows notes
-- [Deployment guide](docs/DEPLOYMENT.md): Render, Neon, Backblaze B2, Resend and releases
-- [API reference](docs/api/openapi.json): OpenAPI 3.1, generated from the routes and their schemas
+- [Deployment guide](docs/DEPLOYMENT.md): Render, Neon, Backblaze B2, Brevo, GitHub Pages and releases
+- [API reference](docs/api/openapi.json): OpenAPI 3.1, generated from the routes and their schemas, and a [Bruno collection](docs/api/bruno/) to try it
+- [Architecture decision records](docs/adr/): the ten design decisions and how each turned out
 - [Export format](docs/export-format.md) and its [JSON schema](docs/schemas/nexus-export.schema.json)
+- [Case study](docs/portfolio/case-study.md): the problem, the design, the results and what broke along the way
 
 ## Roadmap
 
