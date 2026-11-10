@@ -48,7 +48,10 @@ services:
         sync: false
       - key: CORS_ORIGINS
         sync: false
-      # Email (Resend). Without a key, emails are only logged.
+      # Email: Brevo (free, sends from one verified address) or Resend. Brevo
+      # wins when both are set; without either, emails are only logged.
+      - key: BREVO_API_KEY
+        sync: false
       - key: RESEND_API_KEY
         sync: false
       - key: MAIL_FROM

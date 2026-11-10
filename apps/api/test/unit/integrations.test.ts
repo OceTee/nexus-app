@@ -1,6 +1,12 @@
 import type { Logger } from 'pino';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { LogSender, MemorySender, ResendSender } from '../../src/integrations/email';
+import {
+  BrevoSender,
+  LogSender,
+  MemorySender,
+  parseMailFrom,
+  ResendSender,
+} from '../../src/integrations/email';
 
 // The push SDK talks to Expo's servers; a stand-in records chunks and replies
 // with scripted tickets.
@@ -32,6 +38,46 @@ const mail = {
 afterEach(() => {
   vi.unstubAllGlobals();
   vi.clearAllMocks();
+});
+
+describe('parseMailFrom', () => {
+  it('splits a display name from the address', () => {
+    expect(parseMailFrom('NEXUS <hi@nexus.example>')).toEqual({
+      name: 'NEXUS',
+      email: 'hi@nexus.example',
+    });
+    expect(parseMailFrom('<hi@nexus.example>')).toEqual({ email: 'hi@nexus.example' });
+    expect(parseMailFrom(' hi@nexus.example ')).toEqual({ email: 'hi@nexus.example' });
+  });
+});
+
+describe('BrevoSender', () => {
+  it('posts the message to Brevo with the API key', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response('{}', { status: 201 }));
+    vi.stubGlobal('fetch', fetchMock);
+    await new BrevoSender('xkeysib-key', 'NEXUS <me@gmail.com>').send(mail);
+
+    const [url, init] = fetchMock.mock.calls[0]!;
+    expect(url).toBe('https://api.brevo.com/v3/smtp/email');
+    expect(init.headers['api-key']).toBe('xkeysib-key');
+    expect(JSON.parse(init.body)).toEqual({
+      sender: { name: 'NEXUS', email: 'me@gmail.com' },
+      to: [{ email: 'Amara@Example.com' }],
+      subject: mail.subject,
+      htmlContent: mail.html,
+      textContent: mail.text,
+    });
+  });
+
+  it('throws with the status so the job retries', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(new Response('sender not verified', { status: 400 })),
+    );
+    await expect(new BrevoSender('k', 'me@gmail.com').send(mail)).rejects.toThrow(
+      'Brevo responded 400: sender not verified',
+    );
+  });
 });
 
 describe('ResendSender', () => {

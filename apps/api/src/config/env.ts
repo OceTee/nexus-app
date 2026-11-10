@@ -38,6 +38,8 @@ const EnvSchema = z
     APP_URL: z.url().default('http://localhost:8081'),
     /** Resend API key; when missing, emails are logged instead of sent (development). */
     RESEND_API_KEY: z.string().min(1).optional(),
+    /** Brevo transactional email; preferred over Resend when set (free, no domain needed). */
+    BREVO_API_KEY: z.string().min(1).optional(),
     MAIL_FROM: z.string().min(3).default('NEXUS <no-reply@nexus.example>'),
     /** Expo access token for push with enhanced security. */
     EXPO_ACCESS_TOKEN: z.string().min(1).optional(),

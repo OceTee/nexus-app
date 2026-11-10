@@ -7,7 +7,7 @@ import type { Logger } from 'pino';
 import type { Env } from './config/env';
 import type { Db } from './db/client';
 import { createLimiters, type LimiterStore, type Limiters } from './http/middleware/rateLimit';
-import { LogSender, ResendSender, type EmailSender } from './integrations/email';
+import { BrevoSender, LogSender, ResendSender, type EmailSender } from './integrations/email';
 import { ExpoPushSender, type PushSender } from './integrations/push';
 import { createJobHandlers } from './jobs/handlers';
 import type { JobHandlers, JobQueue } from './jobs/queue';
@@ -89,9 +89,11 @@ export function createContainer(deps: ContainerDeps): Container {
   );
   const email =
     deps.email ??
-    (env.RESEND_API_KEY
-      ? new ResendSender(env.RESEND_API_KEY, env.MAIL_FROM)
-      : new LogSender(logger));
+    (env.BREVO_API_KEY
+      ? new BrevoSender(env.BREVO_API_KEY, env.MAIL_FROM)
+      : env.RESEND_API_KEY
+        ? new ResendSender(env.RESEND_API_KEY, env.MAIL_FROM)
+        : new LogSender(logger));
   const push = deps.push ?? new ExpoPushSender(env.EXPO_ACCESS_TOKEN, logger);
 
   const storage = deps.storage ?? storageFromEnv(env, logger);

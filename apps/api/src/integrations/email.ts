@@ -35,6 +35,43 @@ export class ResendSender implements EmailSender {
   }
 }
 
+/** Splits `NEXUS <hi@example.com>` into a name and an address. */
+export function parseMailFrom(from: string): { name?: string; email: string } {
+  const m = /^\s*(.*?)\s*<([^>]+)>\s*$/.exec(from);
+  if (!m) return { email: from.trim() };
+  return m[1] ? { name: m[1], email: m[2]!.trim() } : { email: m[2]!.trim() };
+}
+
+/**
+ * Sends through Brevo's transactional API. Its free plan can send from a
+ * single verified address (no domain needed), so anyone can receive the
+ * verification and reset emails.
+ */
+export class BrevoSender implements EmailSender {
+  constructor(
+    private readonly apiKey: string,
+    private readonly from: string,
+  ) {}
+
+  async send(email: OutgoingEmail): Promise<void> {
+    const res = await fetch('https://api.brevo.com/v3/smtp/email', {
+      method: 'POST',
+      headers: { 'api-key': this.apiKey, 'content-type': 'application/json' },
+      body: JSON.stringify({
+        sender: parseMailFrom(this.from),
+        to: [{ email: email.to }],
+        subject: email.subject,
+        htmlContent: email.html,
+        textContent: email.text,
+      }),
+    });
+    if (!res.ok) {
+      // The job retries with backoff; the body never contains secrets.
+      throw new Error(`Brevo responded ${res.status}: ${(await res.text()).slice(0, 200)}`);
+    }
+  }
+}
+
 /** Development sender: logs the subject and any link instead of sending. */
 export class LogSender implements EmailSender {
   /** The most recent messages, for the development outbox route (E2E flows). */
