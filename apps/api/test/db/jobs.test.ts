@@ -68,6 +68,8 @@ describe('schedules', () => {
       'account.deletion-reminder': '0 9 * * *',
       'exports.expire': '15 * * * *',
       'audit.prune': '0 6 1 * *',
+      // Not in the TDD table: the public demo account's nightly reset.
+      'demo.reset': '30 5 * * *',
     });
   });
 });
