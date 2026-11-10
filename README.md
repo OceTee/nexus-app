@@ -108,6 +108,16 @@ The app talks to two network endpoints for user data: the API, and object storag
 9. The app applies results, changes, conflicts and the new cursor in one SQLite transaction.
 10. Conflicts show as a banner; the person keeps one copy or merges both, and the choice syncs like any edit.
 
+## Screenshots
+
+| Notes                                                                                | A note and its backlinks                                                                                  | Knowledge graph                                                                                | Search                                                                                 |
+| ------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| <img src="docs/screenshots/light-01-notes.png" width="180" alt="Notes, light theme"> | <img src="docs/screenshots/light-03-reading.png" width="180" alt="A note and its backlinks, light theme"> | <img src="docs/screenshots/light-06-graph.png" width="180" alt="Knowledge graph, light theme"> | <img src="docs/screenshots/light-07-search.png" width="180" alt="Search, light theme"> |
+| <img src="docs/screenshots/dark-01-notes.png" width="180" alt="Notes, dark theme">   | <img src="docs/screenshots/dark-03-reading.png" width="180" alt="A note and its backlinks, dark theme">   | <img src="docs/screenshots/dark-06-graph.png" width="180" alt="Knowledge graph, dark theme">   | <img src="docs/screenshots/dark-07-search.png" width="180" alt="Search, dark theme">   |
+
+More screens, in light and dark, are in [docs/screenshots](docs/screenshots/). They are captured
+on an Android emulator by the E2E workflow (`apps/mobile/.maestro/screenshots`).
+
 ## Tech stack
 
 The whole project is written in TypeScript and organised as a pnpm and Turborepo monorepo.
