@@ -1,0 +1,12 @@
+# Sets the app theme from Settings → Appearance. Param: THEME_LABEL (Light, Dark).
+appId: com.gladprosper.nexus.development
+---
+- runFlow:
+    file: ../subflows/go-to-tab.yaml
+    env:
+      TAB: 'Settings'
+      EXPECT: 'Trash'
+- tapOn: 'Appearance, Theme, text size, contrast'
+- tapOn: ${THEME_LABEL}
+- waitForAnimationToEnd
+- tapOn: 'Back'

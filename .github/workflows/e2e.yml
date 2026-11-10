@@ -162,3 +162,12 @@ jobs:
             ~/.maestro/tests
             ${{ runner.temp }}/api.log
           retention-days: 14
+
+      - name: Upload README screenshots
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: screenshots
+          path: apps/mobile/screenshots
+          if-no-files-found: warn
+          retention-days: 30

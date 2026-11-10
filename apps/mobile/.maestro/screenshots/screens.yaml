@@ -1,0 +1,82 @@
+# Captures the main screens in the current theme. Param: THEME (light or dark).
+# Run by capture.yaml once the sample notes exist.
+appId: com.gladprosper.nexus.development
+---
+- runFlow:
+    file: ../subflows/go-to-tab.yaml
+    env:
+      TAB: 'Notes'
+      EXPECT: 'New note'
+- extendedWaitUntil:
+    visible: 'Synced'
+    timeout: 60000
+- takeScreenshot: screenshots/${THEME}-01-notes
+
+# Editor, reading view, backlinks and history of the most linked note.
+- tapOn: 'Kalman filters'
+- tapOn: 'Edit'
+- waitForAnimationToEnd
+- takeScreenshot: screenshots/${THEME}-02-editor
+- hideKeyboard
+- tapOn: 'Read'
+- waitForAnimationToEnd
+- takeScreenshot: screenshots/${THEME}-03-reading
+- tapOn: '.*notes link here.*'
+- waitForAnimationToEnd
+- takeScreenshot: screenshots/${THEME}-04-backlinks
+- back
+- tapOn: 'More actions'
+- tapOn: 'History'
+- waitForAnimationToEnd
+- takeScreenshot: screenshots/${THEME}-05-history
+- tapOn: 'Back'
+- tapOn: 'Back'
+
+- runFlow:
+    file: ../subflows/go-to-tab.yaml
+    env:
+      TAB: 'Graph'
+      EXPECT: 'Find a note in the graph'
+# Let the force layout settle before capturing.
+- waitForAnimationToEnd:
+    timeout: 8000
+- takeScreenshot: screenshots/${THEME}-06-graph
+
+- runFlow:
+    file: ../subflows/go-to-tab.yaml
+    env:
+      TAB: 'Search'
+      EXPECT: 'Search notes'
+- tapOn:
+    id: 'search-input'
+- inputText: 'filters'
+- hideKeyboard
+- extendedWaitUntil:
+    visible: 'Particle filters'
+    timeout: 10000
+- takeScreenshot: screenshots/${THEME}-07-search
+- tapOn: 'Clear search'
+
+- runFlow:
+    file: ../subflows/go-to-tab.yaml
+    env:
+      TAB: 'Collections'
+      EXPECT: 'New collection'
+- takeScreenshot: screenshots/${THEME}-08-collections
+
+- runFlow:
+    file: ../subflows/go-to-tab.yaml
+    env:
+      TAB: 'Settings'
+      EXPECT: 'Trash'
+- takeScreenshot: screenshots/${THEME}-09-settings
+- tapOn: 'Tags'
+- waitForAnimationToEnd
+- takeScreenshot: screenshots/${THEME}-10-tags
+- tapOn: 'Back'
+- tapOn: 'Sync, Status, queued changes and errors'
+- extendedWaitUntil:
+    visible: 'Up to date'
+    timeout: 30000
+- takeScreenshot: screenshots/${THEME}-11-sync
+- tapOn: 'Back'

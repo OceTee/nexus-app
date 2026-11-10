@@ -1,0 +1,83 @@
+# Screenshots for the README (TDD Phase 14): the welcome screen, then a
+# signed-in account with a few linked notes, captured in light and dark.
+# Run after clearing the app's data (ci.sh does); images land in
+# apps/mobile/screenshots/.
+appId: com.gladprosper.nexus.development
+name: README screenshots
+---
+- launchApp
+- tapOn:
+    text: 'Wait'
+    optional: true
+- extendedWaitUntil:
+    visible: 'Continue offline'
+    timeout: 120000
+- takeScreenshot: screenshots/light-00-welcome
+
+- runFlow: ../subflows/sign-in-fresh.yaml
+
+# Sample notes that link to each other, so backlinks and the graph have shape.
+- runFlow:
+    file: ../subflows/new-note.yaml
+    env:
+      TITLE: 'Kalman filters'
+      BODY: 'Estimates a hidden state from **noisy measurements**, step by step: predict, then correct.'
+- runFlow:
+    file: ../subflows/new-note.yaml
+    env:
+      TITLE: 'Sensor fusion'
+      BODY: 'Combines GPS, IMU and wheel odometry. The workhorse is the [[Kalman filters]].'
+- runFlow:
+    file: ../subflows/new-note.yaml
+    env:
+      TITLE: 'Particle filters'
+      BODY: 'A nonlinear cousin of [[Kalman filters]], used when [[Sensor fusion]] gets messy.'
+- runFlow:
+    file: ../subflows/new-note.yaml
+    env:
+      TITLE: 'Reading list'
+      BODY: 'Probabilistic Robotics, chapters 3 and 4. Revisit [[Particle filters]].'
+
+# A collection and a tag.
+- runFlow:
+    file: ../subflows/go-to-tab.yaml
+    env:
+      TAB: 'Collections'
+      EXPECT: 'New collection'
+- tapOn: 'New collection'
+- inputText: 'Robotics'
+- pressKey: Enter
+- extendedWaitUntil:
+    visible: 'Robotics'
+    timeout: 10000
+- runFlow:
+    file: ../subflows/go-to-tab.yaml
+    env:
+      TAB: 'Notes'
+      EXPECT: 'New note'
+- longPressOn: 'Kalman filters'
+- tapOn: 'Tags'
+- tapOn:
+    id: 'tag-query'
+- inputText: 'estimation'
+- tapOn: 'Create “estimation”'
+- hideKeyboard
+- tapOn: 'Back'
+
+# Light first, then dark, set explicitly rather than following the emulator.
+- runFlow:
+    file: theme.yaml
+    env:
+      THEME_LABEL: 'Light'
+- runFlow:
+    file: screens.yaml
+    env:
+      THEME: light
+- runFlow:
+    file: theme.yaml
+    env:
+      THEME_LABEL: 'Dark'
+- runFlow:
+    file: screens.yaml
+    env:
+      THEME: dark
