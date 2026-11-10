@@ -43,7 +43,13 @@ export default function AppLayout() {
   return (
     <LockGate>
       <Stack
-        screenOptions={{ headerShown: false, contentStyle: { backgroundColor: t.colors.surface } }}
+        screenOptions={{
+          headerShown: false,
+          contentStyle: { backgroundColor: t.colors.surface },
+          // Native screens set the status bar themselves; follow the app's theme,
+          // not the system's (dark mode had dark, unreadable status-bar icons).
+          statusBarStyle: t.scheme === 'dark' ? 'light' : 'dark',
+        }}
       >
         {MODALS.map((name) => (
           <Stack.Screen key={name} name={name} options={{ presentation: 'modal' }} />
