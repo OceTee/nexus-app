@@ -71,3 +71,7 @@ services:
         sync: false
       - key: BACKUP_AGE_RECIPIENT
         sync: false
+      # Public demo account (demo@nexus.example): set a password to have the
+      # account and its sample notes restored every night at 05:30 UTC.
+      - key: DEMO_PASSWORD
+        sync: false

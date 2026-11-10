@@ -1,6 +1,7 @@
 import { and, eq, inArray, isNotNull, isNull, ne } from 'drizzle-orm';
 import type { Logger } from 'pino';
 import type { Db } from '../db/client';
+import { seedDemo } from '../db/seed/seedDemo';
 import { devices } from '../db/schema';
 import { withUser } from '../db/withUser';
 import type { Limiters } from '../http/middleware/rateLimit';
@@ -9,6 +10,7 @@ import { renderEmail } from '../integrations/emailTemplates';
 import type { PushSender } from '../integrations/push';
 import type { JobHandlers } from './queue';
 import type { ExportsService } from '../modules/exports/exports.service';
+import { hashPassword } from '../modules/auth/password';
 import {
   backupDatabase,
   compactChanges,
@@ -31,6 +33,12 @@ export interface JobDeps {
   /** Cross-user connection and storage for scheduled maintenance. */
   maintenance: MaintenanceDeps;
   exports: ExportsService;
+  /**
+   * Password of the public demo account (demo@nexus.example). When set, the
+   * `demo.reset` job restores the account and its sample notes every night;
+   * when unset, the job does nothing.
+   */
+  demoPassword?: string;
 }
 
 /** Alert copy per event; `sync.nudge` is data-only (no title or body). */
@@ -58,6 +66,7 @@ export function createJobHandlers({
   limiters,
   maintenance,
   exports,
+  demoPassword,
 }: JobDeps): JobHandlers {
   const log = (job: string) => (result: unknown) => logger.info({ job, result }, 'job finished');
   return {
@@ -115,5 +124,12 @@ export function createJobHandlers({
     'audit.prune': async () => log('audit.prune')(await pruneAudit(maintenance)),
     'exports.expire': async () => log('exports.expire')(await expireExports(maintenance)),
     'backup.dump': async () => log('backup.dump')(await backupDatabase(maintenance)),
+    async 'demo.reset'() {
+      if (!demoPassword) {
+        logger.info('demo.reset skipped: DEMO_PASSWORD is not set');
+        return;
+      }
+      log('demo.reset')(await seedDemo(maintenance.db, await hashPassword(demoPassword)));
+    },
   };
 }

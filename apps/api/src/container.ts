@@ -155,6 +155,7 @@ export function createContainer(deps: ContainerDeps): Container {
     push,
     limiters,
     exports: container.exports,
+    ...(env.DEMO_PASSWORD ? { demoPassword: env.DEMO_PASSWORD } : {}),
     maintenance: {
       db: deps.maintDb ?? db,
       storage,

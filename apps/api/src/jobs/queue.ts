@@ -46,6 +46,7 @@ export interface JobPayloads {
   'audit.prune': NoData;
   'exports.expire': NoData;
   'backup.dump': NoData;
+  'demo.reset': NoData;
 }
 
 export type JobName = keyof JobPayloads;
@@ -66,6 +67,7 @@ export const QUEUE_POLICIES: Record<JobName, { retryLimit: number; retryDelay: n
   'audit.prune': { retryLimit: 1, retryDelay: 300 },
   'exports.expire': { retryLimit: 1, retryDelay: 300 },
   'backup.dump': { retryLimit: 2, retryDelay: 600 },
+  'demo.reset': { retryLimit: 1, retryDelay: 300 },
 };
 
 /** Cron schedules in UTC (TDD Section F, Background jobs). */
@@ -79,6 +81,7 @@ export const SCHEDULES: Partial<Record<JobName, string>> = {
   'account.deletion-reminder': '0 9 * * *',
   'exports.expire': '15 * * * *',
   'audit.prune': '0 6 1 * *',
+  'demo.reset': '30 5 * * *',
 };
 
 export interface JobQueue {
