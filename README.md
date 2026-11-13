@@ -23,7 +23,7 @@ The phone is where the work happens, not the server. Every note, collection, tag
 
 - **Android:** download the APK from the [latest release](https://github.com/OceTee/nexus-app/releases/latest) and install it. Releases are signed, so a new version installs as an update.
 - **Without an account:** tap **Continue offline**. Everything except sync works on the device: notes, links, the graph, search, history and export.
-- **With an account:** sign up in the app to sync through the hosted API. The demo sends email from Resend's shared test address, which only delivers to the project owner, so new accounts can't be confirmed until the project has its own mail domain.
+- **With an account:** sign up in the app to sync through the hosted API. The confirmation email links to [a small web page](https://ocetee.github.io/nexus-app/) that opens the app; it can land in spam, since it's sent from a free address. The API runs on a free plan, so the first request after a quiet spell can take a few seconds.
 - **iOS:** not built yet; it needs a Mac or an Apple developer account.
 
 ## What it is meant to be
